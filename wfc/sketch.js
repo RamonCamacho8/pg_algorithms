@@ -1,29 +1,86 @@
 const BACKGROUND_COLOR = 'white'
 
+const FRAME_RATE = 60
+const FRAMES_LIMIT = 10000
 const CELL_SIZE = 24
 const QUANTITY = 30
 const CANVAS_SIZE = QUANTITY * CELL_SIZE
+const colorMap = [{ r: 0, g: 0, b: 0 }, { r: 0, g: 255, b: 255 }]
 
 /**
- * a: Socket con cualquier cosa
- * e: Socket con vacío
- * l: Socket con linea
- * cm: Socket con Conexión media
- * ct: Socket con Conexión Arriba
- * cb: Socket con Conexión Abajo
- * 
- * 
+ * @typedef {Object} SocketData
+ * @property {boolean} verticalSelfConnect
+ * @property {boolean} horizontalSelfConnect
+ * @property {number[]} up
+ * @property {number[]} down
+ * @property {number[]} left
+ * @property {number[]} right
  */
 
-
-const colorMap = [{ r: 0, g: 0, b: 0 }, { r: 0, g: 255, b: 255 }]
+/**
+ * @typedef {Object} TileData
+ * @property {string} baseName
+ * @property {string} name
+ * @property {Array<Array<number>>} renderData
+ * @property {Array<number>} rotations
+ * @property {SocketData} socketData
+ * @property {Array<Array<{r: number, g: number, b: number}>>} colorData
+ * @property {boolean} include
+ */
 const baseTiles = [
   {
     baseName: 'empty',
     renderData: [[0, 0, 0], [0, 0, 0], [0, 0, 0]],
     rotations: [],
     socketData: {
-      all: ['e']
+      up:     [0,3],
+      down:   [0,3],
+      left:   [0,3],
+      right:  [0,3],
+      verticalSelfConnect: true,
+      horizontalSelfConnect: true
+    },
+    include: true
+  },
+  {
+    baseName: 'line',
+    renderData: [[0, 1, 0], [0, 1, 0], [0, 1, 0]],
+    rotations: [90],
+    socketData: {
+      up: [1],
+      down: [1],
+      left: [3],
+      right: [3],
+      verticalSelfConnect: true,
+      horizontalSelfConnect: true
+    },
+    include: true
+  },
+  {
+    baseName: 'elbow',
+    renderData: [[0, 0, 0], [0, 1, 1], [0, 1, 0]],
+    rotations: [90, 180, 270],
+    socketData: {
+      up: [3],
+      left: [3],
+      right: [1],
+      down: [1],
+      verticalSelfConnect: true,
+      horizontalSelfConnect: true
+    },
+    include: true
+  },
+  {
+    baseName: 'tee',
+    renderData: [[0, 0, 0], [1, 1, 1], [0, 1, 0]],
+    rotations: [90, 180, 270],
+    socketData: {
+      up: [3],
+      left: [1],
+      right: [1],
+      down: [1],
+      verticalSelfConnect: true,
+      horizontalSelfConnect: true
     },
     include: true
   },
@@ -32,40 +89,39 @@ const baseTiles = [
     renderData: [[0, 1, 0], [1, 1, 1], [0, 1, 0]],
     rotations: [],
     socketData: {
-      all: ['cm']
+      up: [1],
+      left: [1],
+      right: [1],
+      down: [1],
+      verticalSelfConnect: true,
+      horizontalSelfConnect: true
     },
-    include: false
-  },
-  {
-    baseName: 'line',
-    renderData: [[0, 1, 0], [0, 1, 0], [0, 1, 0]],
-    rotations: [90],
     include: true
   },
   {
-    baseName: 'elbow',
-    renderData: [[0, 0, 0], [0, 1, 1], [0, 1, 0]],
+    baseName: 'Y',
+    renderData: [[1, 0, 1], [1, 1, 1], [0, 1, 0]],
     rotations: [90, 180, 270],
     socketData: {
-      up: ['e'],
-      left: ['e'],
-      right: ['cm'],
-      down: ['cm']
+      up: [0,2],
+      left: [3],
+      right: [3],
+      down: [1],
+      verticalSelfConnect: true,
+      horizontalSelfConnect: false
     },
     include: true
   },
   {
-    baseName: 'tee',
-    renderData: [[0, 1, 0], [1, 1, 1], [0, 0, 0]],
-    rotations: [90, 180, 270],
-    include: false
-  },
+    baseName:
+  }
+  /*
   {
     baseName: 'end',
     renderData: [[0, 1, 0], [0, 1, 0], [0, 0, 0]],
     rotations: [90, 180, 270],
     include: false
-  }
+  } */
 ]
 
 
@@ -272,7 +328,6 @@ const drawColorData = (col, row, cellSize, colorData) => {
  * @param {[Cell]} cells 
  * @returns 
  */
-
 const lookNeighbors = (cell, cells) => {
   
   const neighbors = new Map()
@@ -306,13 +361,14 @@ const lookNeighbors = (cell, cells) => {
  * @param {Cell} cell 
  * @param {Map<string,Cell>} neighbors 
  */
-const updateNeighborStates = (cell, neighbors, recursive = false) => {
+const updateNeighborStates = (cell, neighbors) => {
   
   neighbors.forEach((neighbor, direction) => {
 
     const neighborState = neighbor.state
-    let newNeighborState = neighborState.filter(tile => canConnect(cell.tile, tile, direction))
 
+    let newNeighborState = neighborState.filter(tile => canConnectBySocket(cell.tile, tile, direction))
+    
     if (newNeighborState.length === 0) {
       newNeighborState = [
         new Tile(generatedTiles[0])
@@ -323,6 +379,57 @@ const updateNeighborStates = (cell, neighbors, recursive = false) => {
 
   })
 
+}
+
+
+/**
+ * 
+ * @param {Tile} pivotTile 
+ * @param {Tile} objetiveTile 
+ * @param {string} direction 
+ * @returns 
+ */
+const canConnectBySocket = (pivotTile, objetiveTile, direction) => {
+
+  const pivotData = pivotTile.tileData.socketData
+  const objetiveData = objetiveTile.tileData.socketData
+
+  switch (direction) {
+    case 'up':
+      const canConnect = canConnectUpBySocket(pivotData, objetiveData)
+      return canConnect
+    case 'down':
+      return canConnectDownBySocket(pivotData, objetiveData)
+    case 'left':
+      return canConnectLeftBySocket(pivotData, objetiveData)
+    case 'right':
+      return canConnectRightBySocket(pivotData, objetiveData)
+    default:
+      return false
+  }
+}
+
+
+/**
+ * 
+ * @param {SocketData} pivotData 
+ * @param {SocketData} objetiveData 
+ * @returns 
+ */
+const canConnectUpBySocket = (pivotData, objetiveData) => {
+  return pivotData.up.some(pivotSocket => objetiveData.down.includes(pivotSocket))
+}
+
+const canConnectDownBySocket = (pivotData, objetiveData) => {
+  return pivotData.down.some(pivotSocket => objetiveData.up.includes(pivotSocket))
+}
+
+const canConnectLeftBySocket = (pivotData, objetiveData) => {
+  return pivotData.left.some(pivotSocket => objetiveData.right.includes(pivotSocket))
+}
+
+const canConnectRightBySocket = (pivotData, objetiveData) => {
+  return pivotData.right.some(pivotSocket => objetiveData.left.includes(pivotSocket))
 }
 
 
@@ -358,6 +465,7 @@ const canConnectUp = (pivotData, objetiveData) => {
 
   return true
 }
+
 
 const canConnectDown = (pivotData, objetiveData) => {
   
@@ -404,6 +512,10 @@ const canConnectRight = (pivotData, objetiveData) => {
 
 class Tile {
 
+  /**
+   * 
+   * @param {TileData} tileData 
+   */
   constructor(tileData) {
 
     this.tileData = tileData
@@ -447,7 +559,6 @@ class Cell {
     }
 
     const colorDataMatrices = this.state.map((tile) => tile.tileData.colorData)
-    // console.log(colorDataMatrices.length)
     if (colorDataMatrices.length > 1) {
       const averagedColorData = averageColorData(colorDataMatrices)
       drawColorData(this.col, this.row, this.size, averagedColorData)
@@ -560,7 +671,7 @@ const selectRandomCell = (cells) => {
 
 function setup() {
 
-  frameRate(60)
+  frameRate(FRAME_RATE)
 
   createCanvas(CANVAS_SIZE, CANVAS_SIZE)
   background(BACKGROUND_COLOR)
@@ -571,10 +682,17 @@ function setup() {
 
 }
 
+let frames = 0
 function draw() {
 
+  if (frames >= FRAMES_LIMIT) {
+    noLoop()
+    return
+  }
 
   const selectedCell = selectCell(cells)
+
+
 
   if (!selectedCell) {
     noLoop()
@@ -600,6 +718,8 @@ function draw() {
   } */
 
   // drawGrid(CANVAS_SIZE, CELL_SIZE)
+
+  frames++
 
 }
 
