@@ -366,6 +366,7 @@ let pivot_cell = null
 function draw() {
 
   
+  
 
   pivot_cell = chooseNextCell(pivot_cell)
 
