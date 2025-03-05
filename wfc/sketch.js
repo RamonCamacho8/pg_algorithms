@@ -168,6 +168,14 @@ class Cell {
     }
   }
 
+  contains(x, y) {
+    return (
+      x >= this.col * this.size && 
+      x < (this.col + 1) * this.size && 
+      y >= this.row * this.size && 
+      y < (this.row + 1) * this.size
+    );
+  }
 
 }
 
@@ -180,16 +188,15 @@ for (let i = 0; i < QUANTITY; i++) {
     const randomIndex = Math.floor(Math.random() * baseTiles.length)
     const tile = new Tile(generatedTiles[randomIndex])
     const cell = new Cell(i, j, CELL_SIZE)
+    
     cell.setTile(tile)
     cells.push(cell)
 
   }
 }
 
-const tile = new Tile(baseTiles[5])
-
-
 function setup() {
+
   createCanvas(CANVAS_SIZE, CANVAS_SIZE)
   background(BACKGROUND_COLOR)
   drawGrid(CANVAS_SIZE, CELL_SIZE)
@@ -201,9 +208,43 @@ function setup() {
 
 function draw() {
 
-  if(frameCount % 60 !== 0) return
 
-  
-  
+  //CAp frame rate
+  frameRate(10)
 
+  // Check if mouse is over any cell
+  let hoveredCell = null;
+  for (let cell of cells) {
+    if (cell.contains(mouseX, mouseY) && cell.tile) {
+      hoveredCell = cell;
+      break;
+    }
+  }
+  
+  // If a cell is being hovered, display its tile information
+  if (hoveredCell) {
+    // Redraw everything to clear previous tooltips
+    background(BACKGROUND_COLOR);
+    drawGrid(CANVAS_SIZE, CELL_SIZE);
+    drawBorder();
+    cells.forEach(cell => cell.display());
+    
+    // Display tooltip for the hovered cell
+    displayTileInfo(hoveredCell.tile);
+  }
+}
+
+function displayTileInfo(tile) {
+  push();
+  fill(0, 0, 0, 200);
+  noStroke();
+  rect(mouseX + 10, mouseY - 40, 150, 30, 5);
+  
+  fill(255);
+  textSize(12);
+  textAlign(LEFT, CENTER);
+
+  const content = `Base Name: ${tile.tileData.baseName} \nName: ${tile.tileData.name} `;
+  text(content, mouseX + 15, mouseY - 25);
+  pop();
 }
