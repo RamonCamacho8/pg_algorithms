@@ -110,10 +110,39 @@ const baseTiles = [
       verticalSelfConnect: true,
       horizontalSelfConnect: false
     },
-    include: true
+    include: false
   },
   {
-    baseName:
+
+    baseName: 'X',
+    renderData: [
+    [1, 0, 1], 
+    [0, 1, 0], 
+    [1, 0, 1]],
+    rotations: [],
+    socketData: {
+      up: [2],
+      left: [2],
+      right: [2],
+      down: [2],
+      verticalSelfConnect: false,
+      horizontalSelfConnect: false
+    },
+    include: false
+  },
+  {
+    baseName: 'square',
+    renderData: [[1, 1, 1], [1, 0, 1], [1, 1, 1]],
+    rotations: [],
+    socketData: {
+      up: [0],
+      left: [0],
+      right: [0],
+      down: [1],
+      verticalSelfConnect: false,
+      horizontalSelfConnect: false
+    },
+    include: true
   }
   /*
   {
@@ -151,12 +180,12 @@ const applyRotations = (tile) => {
   }
 
   // Función que rota la información de sockets según 90° en el sentido de las agujas del reloj.
-  // Si se proporciona la propiedad "all", se retorna sin cambios.
   // Si se usan las propiedades "up", "right", "down" y "left", se mapean de la siguiente forma:
   // up -> right, right -> down, down -> left, left -> up.
+  // Para la propiedad "horizontalSelfConnect" se rota en sentido de las agujas del reloj.
+  // Para la propiedad "verticalSelfConnect" se rota en sentido de las agujas del reloj.
   function rotateSocketData(data, steps) {
     if (!data) return data;
-    if (data.all) return data;
 
     const mapping = {
       up: 'right',
@@ -168,10 +197,16 @@ const applyRotations = (tile) => {
     let rotated = { ...data };
     for (let s = 0; s < steps; s++) {
       const temp = {};
+      // Rotate directional properties
       for (const key in rotated) {
-        const newKey = mapping[key] || key;
-        temp[newKey] = rotated[key];
+        if (['up', 'down', 'left', 'right'].includes(key)) {
+          const newKey = mapping[key];
+          temp[newKey] = rotated[key];
+        }
       }
+      // Swap self-connect properties since axes rotate
+      temp.horizontalSelfConnect = rotated.verticalSelfConnect;
+      temp.verticalSelfConnect = rotated.horizontalSelfConnect;
       rotated = temp;
     }
     return rotated;
@@ -391,13 +426,15 @@ const updateNeighborStates = (cell, neighbors) => {
  */
 const canConnectBySocket = (pivotTile, objetiveTile, direction) => {
 
+  const pivotBaseName = pivotTile.tileData.baseName
   const pivotData = pivotTile.tileData.socketData
+  
+  const objetiveBaseName = objetiveTile.tileData.baseName
   const objetiveData = objetiveTile.tileData.socketData
 
   switch (direction) {
     case 'up':
-      const canConnect = canConnectUpBySocket(pivotData, objetiveData)
-      return canConnect
+      return canConnectUpBySocket(pivotData, objetiveData)
     case 'down':
       return canConnectDownBySocket(pivotData, objetiveData)
     case 'left':
