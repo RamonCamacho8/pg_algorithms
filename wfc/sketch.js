@@ -1,163 +1,33 @@
-const BACKGROUND_COLOR = 'white'
+import { baseTiles, five_by_five_Tiles } from "./data.js"
+
+
+const BACKGROUND_COLOR = 'green'
 
 const FRAME_RATE = 60
 const FRAMES_LIMIT = 10000
 const CELL_SIZE = 24
 const QUANTITY = 30
 const CANVAS_SIZE = QUANTITY * CELL_SIZE
-const colorMap = [{ r: 0, g: 0, b: 0 }, { r: 0, g: 255, b: 255 }]
+const colorMap = [
+                  { r: 0, g: 75, b: 0 },  // 0
+                  { r: 200, g: 200, b: 200},  // 1
+                  { r: 255, g: 0, b: 255}, // 2
+                  { r: 255, g: 255, b: 0}, // 3
+                  { r: 88, g: 57, b: 39}, // 4
+                  { r: 218, g: 160, b: 109}, // 5
+                  { r: 200, g: 200, b: 200}, // 6
+                ]
+
 
 /**
- * @typedef {Object} SocketData
- * @property {boolean} verticalSelfConnect
- * @property {boolean} horizontalSelfConnect
- * @property {number[]} up
- * @property {number[]} down
- * @property {number[]} left
- * @property {number[]} right
+ * 
+ * @param {TileData} tileData 
+ * @returns {[TileData]}
  */
-
-/**
- * @typedef {Object} TileData
- * @property {string} baseName
- * @property {string} name
- * @property {Array<Array<number>>} renderData
- * @property {Array<number>} rotations
- * @property {SocketData} socketData
- * @property {Array<Array<{r: number, g: number, b: number}>>} colorData
- * @property {boolean} include
- */
-const baseTiles = [
-  {
-    baseName: 'empty',
-    renderData: [[0, 0, 0], [0, 0, 0], [0, 0, 0]],
-    rotations: [],
-    socketData: {
-      up:     [0,3],
-      down:   [0,3],
-      left:   [0,3],
-      right:  [0,3],
-      verticalSelfConnect: true,
-      horizontalSelfConnect: true
-    },
-    include: true
-  },
-  {
-    baseName: 'line',
-    renderData: [[0, 1, 0], [0, 1, 0], [0, 1, 0]],
-    rotations: [90],
-    socketData: {
-      up: [1],
-      down: [1],
-      left: [3],
-      right: [3],
-      verticalSelfConnect: true,
-      horizontalSelfConnect: true
-    },
-    include: true
-  },
-  {
-    baseName: 'elbow',
-    renderData: [[0, 0, 0], [0, 1, 1], [0, 1, 0]],
-    rotations: [90, 180, 270],
-    socketData: {
-      up: [3],
-      left: [3],
-      right: [1],
-      down: [1],
-      verticalSelfConnect: true,
-      horizontalSelfConnect: true
-    },
-    include: true
-  },
-  {
-    baseName: 'tee',
-    renderData: [[0, 0, 0], [1, 1, 1], [0, 1, 0]],
-    rotations: [90, 180, 270],
-    socketData: {
-      up: [3],
-      left: [1],
-      right: [1],
-      down: [1],
-      verticalSelfConnect: true,
-      horizontalSelfConnect: true
-    },
-    include: true
-  },
-  {
-    baseName: 'cross',
-    renderData: [[0, 1, 0], [1, 1, 1], [0, 1, 0]],
-    rotations: [],
-    socketData: {
-      up: [1],
-      left: [1],
-      right: [1],
-      down: [1],
-      verticalSelfConnect: true,
-      horizontalSelfConnect: true
-    },
-    include: true
-  },
-  {
-    baseName: 'Y',
-    renderData: [[1, 0, 1], [1, 1, 1], [0, 1, 0]],
-    rotations: [90, 180, 270],
-    socketData: {
-      up: [0,2],
-      left: [3],
-      right: [3],
-      down: [1],
-      verticalSelfConnect: true,
-      horizontalSelfConnect: false
-    },
-    include: false
-  },
-  {
-
-    baseName: 'X',
-    renderData: [
-    [1, 0, 1], 
-    [0, 1, 0], 
-    [1, 0, 1]],
-    rotations: [],
-    socketData: {
-      up: [2],
-      left: [2],
-      right: [2],
-      down: [2],
-      verticalSelfConnect: false,
-      horizontalSelfConnect: false
-    },
-    include: false
-  },
-  {
-    baseName: 'square',
-    renderData: [[1, 1, 1], [1, 0, 1], [1, 1, 1]],
-    rotations: [],
-    socketData: {
-      up: [0],
-      left: [0],
-      right: [0],
-      down: [1],
-      verticalSelfConnect: false,
-      horizontalSelfConnect: false
-    },
-    include: true
-  }
-  /*
-  {
-    baseName: 'end',
-    renderData: [[0, 1, 0], [0, 1, 0], [0, 0, 0]],
-    rotations: [90, 180, 270],
-    include: false
-  } */
-]
-
-
-const applyRotations = (tile) => {
+const applyRotations = (tileData) => {
 
   const results = [];
-  const { baseName, renderData, rotations, socketData } = tile;
+  const { baseName, renderData, rotations, socketData } = tileData;
 
   // Agregamos la base sin rotación
   results.push({
@@ -168,7 +38,7 @@ const applyRotations = (tile) => {
   });
 
   // Función que rota una matriz 90° en el sentido de las agujas del reloj
-  function rotar90(matriz) {
+  function rotate(matriz) {
     const n = matriz.length;
     const nueva = Array.from({ length: n }, () => Array(n).fill(0));
     for (let i = 0; i < n; i++) {
@@ -217,7 +87,7 @@ const applyRotations = (tile) => {
     let pasos = angulo / 90;
     let matrizRotada = renderData;
     for (let i = 0; i < pasos; i++) {
-      matrizRotada = rotar90(matrizRotada);
+      matrizRotada = rotate(matrizRotada);
     }
     let rotatedSocketData = rotateSocketData(socketData, pasos);
     results.push({
@@ -247,7 +117,7 @@ const createColorData = (tileData) => {
   tileData.colorData = colorData
 }
 
-const generatedTiles = baseTiles
+const generatedTiles = five_by_five_Tiles
   .filter(tile => tile.include)
   .map(applyRotations)
   .flat()
@@ -406,7 +276,7 @@ const updateNeighborStates = (cell, neighbors) => {
     
     if (newNeighborState.length === 0) {
       newNeighborState = [
-        new Tile(generatedTiles[0])
+        new TileData(generatedTiles[0])
       ]
     }
 
@@ -419,8 +289,8 @@ const updateNeighborStates = (cell, neighbors) => {
 
 /**
  * 
- * @param {Tile} pivotTile 
- * @param {Tile} objetiveTile 
+ * @param {TileData} pivotTile 
+ * @param {TileData} objetiveTile 
  * @param {string} direction 
  * @returns 
  */
@@ -547,7 +417,7 @@ const canConnectRight = (pivotData, objetiveData) => {
 }
 
 
-class Tile {
+class TileData {
 
   /**
    * 
@@ -568,13 +438,12 @@ class Tile {
 
 
 class Cell {
-
   /**
    * 
    * @param {number} col 
    * @param {number} row 
    * @param {number} size 
-   * @param {[Tile]} state 
+   * @param {[TileData]} state 
    */
   constructor(col, row, size, state) {
     this.col = col
@@ -644,13 +513,13 @@ class Cell {
 
 
 const cells = []
-const tiles = generatedTiles.map((tileData) => new Tile(tileData))
+const tiles = generatedTiles.map((tileData) => new TileData(tileData))
 
 
 for (let i = 0; i < QUANTITY; i++) {
   for (let j = 0; j < QUANTITY; j++) {
 
-    const cell = new Cell(col = i, row = j, size = CELL_SIZE, state = tiles)
+    const cell = new Cell(i, j, CELL_SIZE, tiles)
     cells.push(cell)
 
   }
@@ -805,3 +674,7 @@ function displayTileInfo(tile) {
   text(content, mouseX + 15, mouseY - 25);
   pop();
 }
+
+
+window.setup = setup
+window.draw = draw
