@@ -7,10 +7,12 @@
     "allowJs": true,
     "lib": [
       "es6",
-      "dom"
+      "dom",
+      "esnext"
     ],
     "rootDir": "src",
     "moduleResolution": "node",
+    "resolveJsonModule": true,
     
   },
   "include": [

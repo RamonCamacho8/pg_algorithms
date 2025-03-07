@@ -1,0 +1,166 @@
+{
+    "tiledatasetname": "basic",
+    "palette": [
+        {"r": 50,"g": 50,"b": 50},
+        {"r": 255,"g": 0,"b": 0},
+        {"r": 0,"g": 0,"b": 0},
+        {"r": 0,"g": 255,"b": 0},
+        {"r": 0,"g": 0,"b": 255},
+        {"r": 255,"g": 255,"b": 0}
+    ],
+    "tiles": [
+        {
+            "type": "blank",
+            "id": 0,
+            "bitmap": [
+                [0, 0, 0, 0, 0],
+                [0, 0, 0, 0, 0],
+                [0, 0, 0, 0, 0],
+                [0, 0, 0, 0, 0],
+                [0, 0, 0, 0, 0]
+            ],
+            "socketData": {
+                "selfConnected": true,
+                "sockets": {
+                    "up": 0,
+                    "left": 0,
+                    "right": 0,
+                    "down": 0
+                }
+            },
+            "flipInfo": {
+                "flip": false,
+                "wasFlipped": false
+            },
+            "rotationInfo": {
+                "rotationAngles": [],
+                "wasRotated": false
+            },
+            "include": true
+        },
+        {
+            "type": "tee",
+            "id": 0,
+            "bitmap": [
+                [0, 0, 0, 0, 0],
+                [0, 0, 0, 0, 0],
+                [1, 1, 1, 1, 1],
+                [0, 0, 1, 0, 0],
+                [0, 0, 1, 0, 0]
+            ],
+            "socketData": {
+                "selfConnected": true,
+                "sockets": {
+                    "up": 0,
+                    "left": 1,
+                    "right": 1,
+                    "down": 1
+                }
+            },
+            "flipInfo": {
+                "flip": false,
+                "wasFlipped": false
+            },
+            "rotationInfo": {
+                "rotationAngles": [
+                    90, 180, 270
+                ],
+                "wasRotated": false
+            },
+            "include": true
+        },
+        {
+            "type": "line",
+            "id": 0,
+            "bitmap": [
+                [0, 0, 1, 0, 0],
+                [0, 0, 1, 0, 0],
+                [0, 0, 1, 0, 0],
+                [0, 0, 1, 0, 0],
+                [0, 0, 1, 0, 0]
+            ],
+            "socketData": {
+                "selfConnected": true,
+                "sockets": {
+                    "up": 1,
+                    "left": 0,
+                    "right": 0,
+                    "down": 1
+                }
+            },
+            "flipInfo": {
+                "flip": false,
+                "wasFlipped": false
+            },
+            "rotationInfo": {
+                "rotationAngles": [
+                    90
+                ],
+                "wasRotated": false
+            },
+            "include": true
+        },
+        {
+            "type": "elbow",
+            "id": 0,
+            "bitmap": [
+                [0, 0, 0, 0, 0],
+                [0, 0, 0, 0, 0],
+                [0, 0, 1, 1, 1],
+                [0, 0, 1, 0, 0],
+                [0, 0, 1, 0, 0]
+            ],
+            "socketData": {
+                "selfConnected": true,
+                "sockets": {
+                    "up": 0,
+                    "left": 0,
+                    "right": 1,
+                    "down": 1
+                }
+            },
+            "flipInfo": {
+                "flip": false,
+                "wasFlipped": false
+            },
+            "rotationInfo": {
+                "rotationAngles": [
+                    90, 180, 270
+                ],
+                "wasRotated": false
+            },
+            "include": true
+        },
+        {
+            "type": "test",
+            "id": 0,
+            "bitmap": [
+                [4, 4, 0, 3, 3],
+                [4, 4, 0, 3, 3],
+                [0, 0, 0, 0, 0],
+                [5, 5, 0, 6, 6],
+                [5, 5, 0, 6, 6]
+            ],
+            "socketData": {
+                "selfConnected": true,
+                "sockets": {
+                    "up": 0,
+                    "left": 1,
+                    "right": 1,
+                    "down": 1
+                }
+            },
+            "flipInfo": {
+                "flip": true,
+                "wasFlipped": false
+            },
+            "rotationInfo": {
+                "rotationAngles": [
+                    90, 180, 270
+                ],
+                "wasRotated": false
+            },
+            "include": false
+        }
+    ]
+}

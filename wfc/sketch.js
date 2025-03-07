@@ -193,22 +193,22 @@ const drawBorder = () => {
 
 /**
  * Calcula la matriz promedio (RGB) a partir de un arreglo de matrices de colores.
- * @param {Array<Array<Array<{r: number, g: number, b: number}>>>} colorMatrices
+ * @param {Array<Array<Array<{r: number, g: number, b: number}>>>} colorDataMatrices
  *        Un arreglo de matrices, donde cada matriz es de tamaño N x M y sus celdas
  *        contienen objetos {r, g, b}.
  * @returns {Array<Array<{r: number, g: number, b: number}>>}
  *        La matriz resultante, de tamaño N x M, con el promedio de los colores.
  */
-function averageColorData(colorMatrices) {
+function averageColorData(colorDataMatrices) {
   // Verificamos que existan matrices y que tengan al menos 1 elemento
-  if (!colorMatrices || colorMatrices.length === 0) {
+  if (!colorDataMatrices || colorDataMatrices.length === 0) {
     throw new Error("El arreglo de matrices está vacío o es inválido.")
   }
 
   // Suponiendo que todas las matrices tienen las mismas dimensiones
-  const numMatrices = colorMatrices.length
-  const rows = colorMatrices[0].length          // N
-  const cols = colorMatrices[0][0].length       // M
+  const numMatrices = colorDataMatrices.length
+  const rows = colorDataMatrices[0].length          // N
+  const cols = colorDataMatrices[0][0].length       // M
 
   // Inicializamos la matriz resultado
   const averagedMatrix = new Array(rows)
@@ -222,9 +222,9 @@ function averageColorData(colorMatrices) {
 
       // Sumamos todos los valores (r, g, b) de las matrices
       for (let k = 0; k < numMatrices; k++) {
-        sumR += colorMatrices[k][i][j].r
-        sumG += colorMatrices[k][i][j].g
-        sumB += colorMatrices[k][i][j].b
+        sumR += colorDataMatrices[k][i][j].r
+        sumG += colorDataMatrices[k][i][j].g
+        sumB += colorDataMatrices[k][i][j].b
       }
 
       // Calculamos el promedio para la celda [i, j]
