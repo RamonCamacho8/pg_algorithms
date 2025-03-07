@@ -1,23 +1,78 @@
-import { baseTiles, five_by_five_Tiles } from "./data.js"
+import { five_by_five_Tiles } from "./data.js"
+/** @typedef {import("./data.js").TileData} TileData */
+/** @typedef {import("./data.js").SocketData} SocketData */
+/** @typedef {import("./data.js").ColorSpecification} ColorSpecification */
 
 
 const BACKGROUND_COLOR = 'green'
-
-const FRAME_RATE = 60
-const FRAMES_LIMIT = 10000
-const CELL_SIZE = 24
+const FRAME_RATE = 10
+const FRAMES_LIMIT = 20
+const CELL_SIZE = 30
 const QUANTITY = 30
 const CANVAS_SIZE = QUANTITY * CELL_SIZE
-const colorMap = [
-                  { r: 0, g: 75, b: 0 },  // 0
-                  { r: 200, g: 200, b: 200},  // 1
-                  { r: 255, g: 0, b: 255}, // 2
-                  { r: 255, g: 255, b: 0}, // 3
-                  { r: 88, g: 57, b: 39}, // 4
-                  { r: 218, g: 160, b: 109}, // 5
-                  { r: 200, g: 200, b: 200}, // 6
-                ]
 
+const rotateMatrix = (matrix) => {
+
+  const n = matrix.length;
+  const rotated = Array.from({ length: n }, () => Array(n).fill(0));
+  for (let i = 0; i < n; i++) {
+    for (let j = 0; j < n; j++) {
+      rotated[j][n - 1 - i] = matrix[i][j];
+    }
+  }
+  return rotated;
+}
+
+/**
+ * Rotates a matrix 90° * times.
+ * @param {Array<Array<number>>} matrix
+ * @param {number} times
+ * @returns {Map<number, Array<Array<number>>>}
+ */
+const rotateMatrixByRotations = (matrix, rotations) => {
+
+  let rotated = matrix;
+  let rotatedMatrices = new Map();
+  for (let i = 0; i < rotations.length; i++) {
+    const angle = rotations[i];
+    rotated = rotateMatrix(rotated);
+    rotatedMatrices.set(angle, rotated);
+  }
+
+  return rotatedMatrices;
+}
+
+
+/**
+ * 
+ * @param {SocketData} data 
+ * @param {number} times 
+ * @param {Object} customMapping 
+ * @returns 
+ */
+const rotateSockedDataByTimes = (data, rotations, customMapping) => {
+  if (!data) return data;
+  const rotationMapping = customMapping || {
+    up: 'right',
+    right: 'down',
+    down: 'left',
+    left: 'up'
+  }
+  let rotatedSocketDatas = new Map();
+  let rotated = { ...data };
+
+  for (let a = 0; a < rotations.length; a++) {
+    const temp = {};
+    const angle = rotations[a];
+    for (const key in rotated) {
+      const newKey = rotationMapping[key];
+      temp[newKey] = rotated[key];
+    }
+    rotated = temp;
+    rotatedSocketDatas.set(angle, rotated);
+  }
+  return rotatedSocketDatas;
+}
 
 /**
  * 
@@ -27,89 +82,45 @@ const colorMap = [
 const applyRotations = (tileData) => {
 
   const results = [];
-  const { baseName, renderData, rotations, socketData } = tileData;
+  const { baseName, bitmap, rotations, socketData, sockets } = tileData;
 
-  // Agregamos la base sin rotación
   results.push({
-    baseName: baseName,
     name: `${baseName}_0`,
-    renderData: renderData,
-    socketData: socketData
-  });
+    ...tileData
+  })
 
-  // Función que rota una matriz 90° en el sentido de las agujas del reloj
-  function rotate(matriz) {
-    const n = matriz.length;
-    const nueva = Array.from({ length: n }, () => Array(n).fill(0));
-    for (let i = 0; i < n; i++) {
-      for (let j = 0; j < n; j++) {
-        nueva[j][n - 1 - i] = matriz[i][j];
-      }
-    }
-    return nueva;
-  }
+  const rotatedBitMaps = rotateMatrixByRotations(bitmap, rotations);
+  const rotatedSockets = rotateSockedDataByTimes(sockets, rotations);
 
-  // Función que rota la información de sockets según 90° en el sentido de las agujas del reloj.
-  // Si se usan las propiedades "up", "right", "down" y "left", se mapean de la siguiente forma:
-  // up -> right, right -> down, down -> left, left -> up.
-  // Para la propiedad "horizontalSelfConnect" se rota en sentido de las agujas del reloj.
-  // Para la propiedad "verticalSelfConnect" se rota en sentido de las agujas del reloj.
-  function rotateSocketData(data, steps) {
-    if (!data) return data;
-
-    const mapping = {
-      up: 'right',
-      right: 'down',
-      down: 'left',
-      left: 'up'
-    };
-
-    let rotated = { ...data };
-    for (let s = 0; s < steps; s++) {
-      const temp = {};
-      // Rotate directional properties
-      for (const key in rotated) {
-        if (['up', 'down', 'left', 'right'].includes(key)) {
-          const newKey = mapping[key];
-          temp[newKey] = rotated[key];
-        }
-      }
-      // Swap self-connect properties since axes rotate
-      temp.horizontalSelfConnect = rotated.verticalSelfConnect;
-      temp.verticalSelfConnect = rotated.horizontalSelfConnect;
-      rotated = temp;
-    }
-    return rotated;
-  }
-
-  // Para cada ángulo de rotación, aplicamos el número de rotaciones de 90° que corresponda
-  rotations.forEach(angulo => {
-    let pasos = angulo / 90;
-    let matrizRotada = renderData;
-    for (let i = 0; i < pasos; i++) {
-      matrizRotada = rotate(matrizRotada);
-    }
-    let rotatedSocketData = rotateSocketData(socketData, pasos);
+  rotations.forEach((angle) => {
+    const rotatedMatrix = rotatedBitMaps.get(angle);
+    const rotatedSocket = rotatedSockets.get(angle);
     results.push({
-      baseName: baseName,
-      name: `${baseName}_${angulo}`,
-      renderData: matrizRotada,
-      socketData: rotatedSocketData
+      name: `${baseName}_${angle}`,
+      ...tileData,
+      bitmap: rotatedMatrix,
+      sockets: rotatedSocket
     });
   });
 
   return results;
 }
 
+
+/**
+ * 
+ * @param {TileData} tileData 
+ */
 const createColorData = (tileData) => {
 
-  const renderData = tileData.renderData
+  const bitmap = tileData.bitmap
+  const palette = tileData.palette
   const colorData = []
 
-  renderData.forEach((row, i) => {
+  bitmap.forEach((row, i) => {
     colorData[i] = []
     row.forEach((column, j) => {
-      const c = colorMap[column]
+      const c = palette[column]
       colorData[i][j] = c
     })
   });
@@ -123,12 +134,12 @@ const generatedTiles = five_by_five_Tiles
   .flat()
 
 generatedTiles.forEach(createColorData)
-console.log(generatedTiles)
+
+console.log('Generated Tiles: ', generatedTiles)
 
 const drawGrid = (canvasSize, cellSize) => {
 
   push()
-
   stroke('white')
   strokeWeight(1)
 
@@ -136,9 +147,7 @@ const drawGrid = (canvasSize, cellSize) => {
     line(i, 0, i, canvasSize)
     line(0, i, canvasSize, i)
   }
-
   pop()
-
 }
 
 const drawBorder = () => {
@@ -167,29 +176,29 @@ function averageColorData(colorMatrices) {
   if (!colorMatrices || colorMatrices.length === 0) {
     throw new Error("El arreglo de matrices está vacío o es inválido.")
   }
-  
+
   // Suponiendo que todas las matrices tienen las mismas dimensiones
   const numMatrices = colorMatrices.length
   const rows = colorMatrices[0].length          // N
   const cols = colorMatrices[0][0].length       // M
-  
+
   // Inicializamos la matriz resultado
   const averagedMatrix = new Array(rows)
-  
+
   for (let i = 0; i < rows; i++) {
     averagedMatrix[i] = new Array(cols)
     for (let j = 0; j < cols; j++) {
       let sumR = 0
       let sumG = 0
       let sumB = 0
-      
+
       // Sumamos todos los valores (r, g, b) de las matrices
       for (let k = 0; k < numMatrices; k++) {
         sumR += colorMatrices[k][i][j].r
         sumG += colorMatrices[k][i][j].g
         sumB += colorMatrices[k][i][j].b
       }
-      
+
       // Calculamos el promedio para la celda [i, j]
       averagedMatrix[i][j] = {
         r: sumR / numMatrices,
@@ -198,33 +207,33 @@ function averageColorData(colorMatrices) {
       }
     }
   }
-  
+
   return averagedMatrix
 }
 
 const drawColorData = (col, row, cellSize, colorData) => {
-  
+
   push()
   stroke('white')
   strokeWeight(0)
 
-  const [x, y]=  [col * cellSize, row * cellSize]
+  const [x, y] = [col * cellSize, row * cellSize]
   const [rows, columns] = [colorData.length, colorData[0].length]
 
-    const subpix = {
-      h: cellSize / rows,
-      w: cellSize / columns
-    }
+  const subpix = {
+    h: cellSize / rows,
+    w: cellSize / columns
+  }
 
-    for (let i = 0; i < rows; i++) {
-      for (let j = 0; j < columns; j++) {
-        const c = colorData[i][j]
-        fill(color(c.r, c.g, c.b))
-        rect(x + j * subpix.w, y + i * subpix.h, subpix.w, subpix.h)
-      }
+  for (let i = 0; i < rows; i++) {
+    for (let j = 0; j < columns; j++) {
+      const c = colorData[i][j]
+      fill(color(c.r, c.g, c.b))
+      rect(x + j * subpix.w, y + i * subpix.h, subpix.w, subpix.h)
     }
+  }
 
-    pop()
+  pop()
 }
 
 /**
@@ -234,7 +243,7 @@ const drawColorData = (col, row, cellSize, colorData) => {
  * @returns 
  */
 const lookNeighbors = (cell, cells) => {
-  
+
   const neighbors = new Map()
   const nonCollapsedCells = cells.filter(cell => !cell.collapsed)
 
@@ -267,16 +276,16 @@ const lookNeighbors = (cell, cells) => {
  * @param {Map<string,Cell>} neighbors 
  */
 const updateNeighborStates = (cell, neighbors) => {
-  
+
   neighbors.forEach((neighbor, direction) => {
 
     const neighborState = neighbor.state
 
-    let newNeighborState = neighborState.filter(tile => canConnectBySocket(cell.tile, tile, direction))
-    
+    let newNeighborState = neighborState.filter(tile => canConnect(cell.tile, tile, direction))
+
     if (newNeighborState.length === 0) {
       newNeighborState = [
-        new TileData(generatedTiles[0])
+        new Tile(generatedTiles[0])
       ]
     }
 
@@ -286,138 +295,82 @@ const updateNeighborStates = (cell, neighbors) => {
 
 }
 
-
 /**
  * 
- * @param {TileData} pivotTile 
- * @param {TileData} objetiveTile 
+ * @param {Tile} pivotTile 
+ * @param {Tile} objetiveTile 
  * @param {string} direction 
- * @returns 
  */
-const canConnectBySocket = (pivotTile, objetiveTile, direction) => {
-
-  const pivotBaseName = pivotTile.tileData.baseName
-  const pivotData = pivotTile.tileData.socketData
-  
-  const objetiveBaseName = objetiveTile.tileData.baseName
-  const objetiveData = objetiveTile.tileData.socketData
-
-  switch (direction) {
-    case 'up':
-      return canConnectUpBySocket(pivotData, objetiveData)
-    case 'down':
-      return canConnectDownBySocket(pivotData, objetiveData)
-    case 'left':
-      return canConnectLeftBySocket(pivotData, objetiveData)
-    case 'right':
-      return canConnectRightBySocket(pivotData, objetiveData)
-    default:
-      return false
-  }
-}
-
-
-/**
- * 
- * @param {SocketData} pivotData 
- * @param {SocketData} objetiveData 
- * @returns 
- */
-const canConnectUpBySocket = (pivotData, objetiveData) => {
-  return pivotData.up.some(pivotSocket => objetiveData.down.includes(pivotSocket))
-}
-
-const canConnectDownBySocket = (pivotData, objetiveData) => {
-  return pivotData.down.some(pivotSocket => objetiveData.up.includes(pivotSocket))
-}
-
-const canConnectLeftBySocket = (pivotData, objetiveData) => {
-  return pivotData.left.some(pivotSocket => objetiveData.right.includes(pivotSocket))
-}
-
-const canConnectRightBySocket = (pivotData, objetiveData) => {
-  return pivotData.right.some(pivotSocket => objetiveData.left.includes(pivotSocket))
-}
-
-
 const canConnect = (pivotTile, objetiveTile, direction) => {
 
-  const pivotData = pivotTile.tileData.renderData
-  const objetiveData = objetiveTile.tileData.renderData
+  console.log('Pivot Tile: ', pivotTile.tileData)
+  console.log('Objetive Tile: ', objetiveTile.tileData)
+
+  const pivotSockets = pivotTile.tileData.sockets
+  const pivotName = pivotTile.tileData.name
+  const objetiveSockets = objetiveTile.tileData.sockets
+  const objetiveName = objetiveTile.tileData.name
+
+
 
   switch (direction) {
     case 'up':
-      return canConnectUp(pivotData, objetiveData)
+      return canConnectUp(pivotSockets, objetiveSockets, pivotName, objetiveName)
     case 'down':
-      return canConnectDown(pivotData, objetiveData)
+      return canConnectDown(pivotSockets, objetiveSockets, objetiveName)
     case 'left':
-      return canConnectLeft(pivotData, objetiveData)
+      return canConnectLeft(pivotSockets, objetiveSockets, objetiveName)
     case 'right':
-      return canConnectRight(pivotData, objetiveData)
+      return canConnectRight(pivotSockets, objetiveSockets, objetiveName)
     default:
       return false
   }
 }
 
-const canConnectUp = (pivotData, objetiveData) => {
-
-  const pivotRow = pivotData[0]
-  const objetiveRow = objetiveData[objetiveData.length - 1]
-
-  for (let i = 0; i < pivotRow.length; i++) {
-    if (pivotRow[i] !== objetiveRow[i]) {
-      return false
-    }
-  }
-
-  return true
-}
-
-
-const canConnectDown = (pivotData, objetiveData) => {
+/**
+ * 
+ * @param {SocketData} pivotSockets 
+ * @param {SocketData} objetiveSockets 
+ * @param {string} pivotName
+ * @param {string} objetiveName
+ * @returns
+ */
+const canConnectUp = (pivotSockets, objetiveSockets, pivotName, objetiveName) => {
   
-  const pivotRow = pivotData[pivotData.length - 1]
-  const objetiveRow = objetiveData[0]
+  console.log('Nombre del pivote: ', pivotName)
+  console.log('Nombre del objetivo: ', objetiveName)
 
-  for (let i = 0; i < pivotRow.length; i++) {
-    if (pivotRow[i] !== objetiveRow[i]) {
-      return false
-    }
-  }
-
-  return true
+  return pivotSockets.up.some(pivotSocket => {
+    if (pivotSocket !== objetiveName) return false
+    return objetiveSockets.down.includes(pivotSocket)
+  })
 }
 
-const canConnectLeft = (pivotData, objetiveData) => {
-  
-  const pivotColumn = pivotData.map(row => row[0])
-  const objetiveColumn = objetiveData.map(row => row[objetiveData.length - 1])
+const canConnectDown = (pivotSockets, objetiveSockets, pivotName, objetiveName) => {
 
-  for (let i = 0; i < pivotColumn.length; i++) {
-    if (pivotColumn[i] !== objetiveColumn[i]) {
-      return false
-    }
-  }
+  return pivotSockets.down.some(pivotSocket => {
+    if (pivotSocket !== objetiveName) return false
+    return objetiveSockets.up.includes(pivotName)
+  })
 
-  return true
 }
 
-const canConnectRight = (pivotData, objetiveData) => {
-  
-  const pivotColumn = pivotData.map(row => row[pivotData.length - 1])
-  const objetiveColumn = objetiveData.map(row => row[0])
+const canConnectLeft = (pivotSockets, objetiveSockets, pivotName, objetiveName) => {
+  return pivotSockets.left.some(pivotSocket => {
+    if (pivotSocket !== objetiveName) return false
+    return objetiveSockets.right.includes(pivotName)
+  })
+}
 
-  for (let i = 0; i < pivotColumn.length; i++) {
-    if (pivotColumn[i] !== objetiveColumn[i]) {
-      return false
-    }
-  }
-
-  return true
+const canConnectRight = (pivotSockets, objetiveSockets, pivotName, objetiveName) => {
+  return pivotSockets.right.some(pivotSocket => {
+    if (pivotSocket !== objetiveName) return false
+    return objetiveSockets.left.includes(pivotName)
+  })
 }
 
 
-class TileData {
+class Tile {
 
   /**
    * 
@@ -443,7 +396,7 @@ class Cell {
    * @param {number} col 
    * @param {number} row 
    * @param {number} size 
-   * @param {[TileData]} state 
+   * @param {[Tile]} state 
    */
   constructor(col, row, size, state) {
     this.col = col
@@ -513,7 +466,7 @@ class Cell {
 
 
 const cells = []
-const tiles = generatedTiles.map((tileData) => new TileData(tileData))
+const tiles = generatedTiles.map((tileData) => new Tile(tileData))
 
 
 for (let i = 0; i < QUANTITY; i++) {
@@ -537,7 +490,7 @@ const selectCell = (cells) => {
   if (nonCollapsedCells.length === 0) {
     return null
   }
-  
+
   let minEntropy = Number.MAX_VALUE
   let selectedCell = null
   const entropyMap = new Map()
@@ -552,7 +505,7 @@ const selectCell = (cells) => {
   })
 
   const minEntropyCells = cells.filter(cell => entropyMap.get(cell) === minEntropy)
-  
+
   if (minEntropyCells.length > 1) {
     selectedCell = selectRandomCell(minEntropyCells)
   }
@@ -612,7 +565,7 @@ function draw() {
   try {
     neighbors.values().forEach(neighbor => neighbor.display())
   }
-  catch{
+  catch {
     console.log(neighbors)
   }
   selectedCell.display()

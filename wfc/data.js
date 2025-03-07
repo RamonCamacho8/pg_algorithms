@@ -1,290 +1,96 @@
 /**
+ * @typedef {Object} ColorSpecification
+ * @property {number} r
+ * @property {number} g
+ * @property {number} b
+ * 
+ */
+
+/**
  * @typedef {Object} SocketData
- * @property {boolean} verticalSelfConnect
- * @property {boolean} horizontalSelfConnect
- * @property {number[]} up
- * @property {number[]} down
- * @property {number[]} left
- * @property {number[]} right
+ * @property {number[] | string[]} up
+ * @property {number[] | string[]} down
+ * @property {number[] | string[]} left
+ * @property {number[] | string[]} right
  */
 
 /**
  * @typedef {Object} TileData
  * @property {string} baseName
  * @property {string} name
- * @property {Array<Array<number>>} renderData
+ * @property {Array<Array<number>>} bitmap
+ * @property {Array<ColorSpecification>} palette
  * @property {Array<number>} rotations
- * @property {SocketData} socketData
- * @property {Array<Array<{r: number, g: number, b: number}>>} colorData
+ * @property {SocketData} sockets
+ * @property {Array<Array<ColorSpecification>>} colorData
  * @property {boolean} include
+ * 
+ * 
  */
 
-export const baseTiles = [
-  {
-    baseName: "empty",
-    renderData: [
-      [0, 0, 0],
-      [0, 0, 0],
-      [0, 0, 0],
-    ],
-    rotations: [],
-    socketData: {
-      up: [0, 3],
-      down: [0, 3],
-      left: [0, 3],
-      right: [0, 3],
-      verticalSelfConnect: true,
-      horizontalSelfConnect: true,
-    },
-    include: true,
-  },
-  {
-    baseName: "line",
-    renderData: [
-      [0, 1, 0],
-      [0, 1, 0],
-      [0, 1, 0],
-    ],
-    rotations: [90],
-    socketData: {
-      up: [1],
-      down: [1],
-      left: [3],
-      right: [3],
-      verticalSelfConnect: true,
-      horizontalSelfConnect: true,
-    },
-    include: true,
-  },
-  {
-    baseName: "elbow",
-    renderData: [
-      [0, 0, 0],
-      [0, 1, 1],
-      [0, 1, 0],
-    ],
-    rotations: [90, 180, 270],
-    socketData: {
-      up: [3],
-      left: [3],
-      right: [1],
-      down: [1],
-      verticalSelfConnect: true,
-      horizontalSelfConnect: true,
-    },
-    include: true,
-  },
-  {
-    baseName: "tee",
-    renderData: [
-      [0, 0, 0],
-      [1, 1, 1],
-      [0, 1, 0],
-    ],
-    rotations: [90, 180, 270],
-    socketData: {
-      up: [3],
-      left: [1],
-      right: [1],
-      down: [1],
-      verticalSelfConnect: true,
-      horizontalSelfConnect: true,
-    },
-    include: true,
-  },
-  {
-    baseName: "cross",
-    renderData: [
-      [0, 1, 0],
-      [1, 1, 1],
-      [0, 1, 0],
-    ],
-    rotations: [],
-    socketData: {
-      up: [1],
-      left: [1],
-      right: [1],
-      down: [1],
-      verticalSelfConnect: true,
-      horizontalSelfConnect: true,
-    },
-    include: true,
-  },
-  {
-    baseName: "Y",
-    renderData: [
-      [1, 0, 1],
-      [1, 1, 1],
-      [0, 1, 0],
-    ],
-    rotations: [90, 180, 270],
-    socketData: {
-      up: [0, 2],
-      left: [3],
-      right: [3],
-      down: [1],
-      verticalSelfConnect: true,
-      horizontalSelfConnect: false,
-    },
-    include: false,
-  },
-  {
-    baseName: "X",
-    renderData: [
-      [1, 0, 1],
-      [0, 1, 0],
-      [1, 0, 1],
-    ],
-    rotations: [],
-    socketData: {
-      up: [2],
-      left: [2],
-      right: [2],
-      down: [2],
-      verticalSelfConnect: false,
-      horizontalSelfConnect: false,
-    },
-    include: false,
-  },
-  {
-    baseName: "square",
-    renderData: [
-      [1, 1, 1],
-      [1, 2, 1],
-      [1, 1, 1],
-    ],
-    rotations: [],
-    socketData: {
-      up: [1],
-      left: [0],
-      right: [0],
-      down: [1],
-      verticalSelfConnect: false,
-      horizontalSelfConnect: false,
-    },
-    include: true,
-  },
-];
 
+
+/**
+ * @type {TileData[]}
+ */
 export const five_by_five_Tiles = [
   {
     baseName: "empty",
-    renderData: [
+    bitmap: [
       [0, 0, 0, 0, 0],
       [0, 0, 0, 0, 0],
       [0, 0, 0, 0, 0],
       [0, 0, 0, 0, 0],
       [0, 0, 0, 0, 0],
     ],
+    palette: [
+      { r: 0, g: 0, b: 0 },
+    ],
     rotations: [],
-    socketData: {
-      up: [0, 3],
-      down: [0, 3],
-      left: [0, 3],
-      right: [0, 3],
-      verticalSelfConnect: true,
-      horizontalSelfConnect: true,
-    },
-    include: true,
+    include: false,
   },
   {
     baseName: "line",
-    renderData: [
+    bitmap: [
       [0, 0, 1, 0, 0],
       [0, 0, 1, 0, 0],
       [0, 0, 1, 0, 0],
       [0, 0, 1, 0, 0],
       [0, 0, 1, 0, 0],
     ],
+    palette: [
+      { r: 0, g: 0, b: 0 },
+      { r: 255, g: 255, b: 255 },
+    ],
     rotations: [90],
-    socketData: {
-      up: [1],
-      down: [1],
-      left: [3],
-      right: [3],
-      verticalSelfConnect: true,
-      horizontalSelfConnect: true,
+    sockets : {
+      up: ['line'],
+      left: ['empty', 'line'],
+      right: ['empty', 'line'],
+      down: ['line'],
     },
     include: true,
   },
   {
     baseName: "elbow",
-    renderData: [
-        [0, 0, 0, 0, 0],
-        [0, 0, 0, 0, 0],
-        [0, 0, 1, 1, 1],
-        [0, 0, 1, 0, 0],
-        [0, 0, 1, 0, 0],
+    bitmap: [
+      [0, 0, 0, 0, 0],
+      [0, 0, 0, 0, 0],
+      [0, 0, 1, 1, 1],
+      [0, 0, 1, 0, 0],
+      [0, 0, 1, 0, 0],
+    ],
+    palette: [
+      { r: 0, g: 0, b: 0 },
+      { r: 255, g: 255, b: 255 },
     ],
     rotations: [90, 180, 270],
-    socketData: {
-      up: [3],
-      left: [3],
-      right: [1],
-      down: [1],
-      verticalSelfConnect: true,
-      horizontalSelfConnect: true,
+    sockets : {
+      up: ['empty'],
+      left: ['empty'],
+      right: ['elbow', 'line'],
+      down: ['elbow', 'line'],
     },
-    include: true,
-  },
-  {
-    baseName: "tee",
-    renderData: [
-        [0, 0, 0, 0, 0],
-        [0, 0, 0, 0, 0],
-        [1, 1, 1, 1, 1],
-        [0, 0, 1, 0, 0],
-        [0, 0, 1, 0, 0],
-    ],
-    rotations: [90, 180, 270],
-    socketData: {
-      up: [3],
-      left: [1],
-      right: [1],
-      down: [1],
-      verticalSelfConnect: true,
-      horizontalSelfConnect: true,
-    },
-    include: true,
-  },
-  {
-    baseName: "cross",
-    renderData: [
-        [0, 0, 1, 0, 0],
-        [0, 0, 1, 0, 0],
-        [1, 1, 1, 1, 1],
-        [0, 0, 1, 0, 0],
-        [0, 0, 1, 0, 0],
-    ],
-    rotations: [],
-    socketData: {
-      up: [1],
-      left: [1],
-      right: [1],
-      down: [1],
-      verticalSelfConnect: true,
-      horizontalSelfConnect: true,
-    },
-    include: true,
-  },
-  {
-    baseName: "house",
-    renderData: [
-        [0, 0, 4, 0, 0],
-        [0, 4, 4, 4, 0],
-        [4, 4, 4, 4, 4],
-        [0, 5, 5, 5, 0],
-        [0, 5, 5, 5, 0],
-    ],
-    rotations: [],
-    socketData: {
-      up: [0],
-      left: [0],
-      right: [0],
-      down: [1],
-      verticalSelfConnect: false,
-      horizontalSelfConnect: false,
-    },
-    include: true,
+    include: false,
   }
 ];
