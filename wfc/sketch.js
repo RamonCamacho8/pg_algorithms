@@ -1,13 +1,13 @@
-import { five_by_five_Tiles } from "./data.js"
+import { scifi_tiles, flowers } from "./data.js"
 /** @typedef {import("./data.js").TileData} TileData */
 /** @typedef {import("./data.js").SocketData} SocketData */
 /** @typedef {import("./data.js").ColorSpecification} ColorSpecification */
 
 
 const BACKGROUND_COLOR = 'green'
-const FRAME_RATE = 10
-const FRAMES_LIMIT = 20
-const CELL_SIZE = 30
+const FRAME_RATE = 60
+const FRAMES_LIMIT = 1000
+const CELL_SIZE = 15
 const QUANTITY = 30
 const CANVAS_SIZE = QUANTITY * CELL_SIZE
 
@@ -74,6 +74,34 @@ const rotateSockedDataByTimes = (data, rotations, customMapping) => {
   return rotatedSocketDatas;
 }
 
+
+const flipMatrix = (matrix, direction) => {
+  if (direction === 'horizontal') {
+    return flipMatrixHorizontally(matrix);
+  }
+  else if (direction === 'vertical') {
+    return flipMatrixVertically(matrix);
+  }
+  return matrix;
+}
+
+const flipMatrixHorizontally = (matrix) => {
+  return matrix.map(row => row.slice().reverse());
+}
+
+const flipMatrixVertically = (matrix) => {
+  return matrix.slice().reverse();
+}
+
+
+const applyFlips = (tileData) => {
+
+  
+
+
+}
+
+
 /**
  * 
  * @param {TileData} tileData 
@@ -82,10 +110,10 @@ const rotateSockedDataByTimes = (data, rotations, customMapping) => {
 const applyRotations = (tileData) => {
 
   const results = [];
-  const { baseName, bitmap, rotations, socketData, sockets } = tileData;
+  const { type, bitmap, rotations, sockets } = tileData;
 
   results.push({
-    name: `${baseName}_0`,
+    name: `${type}_0`,
     ...tileData
   })
 
@@ -96,7 +124,7 @@ const applyRotations = (tileData) => {
     const rotatedMatrix = rotatedBitMaps.get(angle);
     const rotatedSocket = rotatedSockets.get(angle);
     results.push({
-      name: `${baseName}_${angle}`,
+      name: `${type}_${angle}`,
       ...tileData,
       bitmap: rotatedMatrix,
       sockets: rotatedSocket
@@ -128,7 +156,7 @@ const createColorData = (tileData) => {
   tileData.colorData = colorData
 }
 
-const generatedTiles = five_by_five_Tiles
+const generatedTiles = flowers
   .filter(tile => tile.include)
   .map(applyRotations)
   .flat()
@@ -246,9 +274,7 @@ const lookNeighbors = (cell, cells) => {
 
   const neighbors = new Map()
   const nonCollapsedCells = cells.filter(cell => !cell.collapsed)
-
-
-
+ 
   const top = nonCollapsedCells.find(c => c.col === cell.col && c.row === cell.row - 1)
   const bottom = nonCollapsedCells.find(c => c.col === cell.col && c.row === cell.row + 1)
   const left = nonCollapsedCells.find(c => c.col === cell.col - 1 && c.row === cell.row)
@@ -303,70 +329,23 @@ const updateNeighborStates = (cell, neighbors) => {
  */
 const canConnect = (pivotTile, objetiveTile, direction) => {
 
-  console.log('Pivot Tile: ', pivotTile.tileData)
-  console.log('Objetive Tile: ', objetiveTile.tileData)
-
   const pivotSockets = pivotTile.tileData.sockets
-  const pivotName = pivotTile.tileData.name
   const objetiveSockets = objetiveTile.tileData.sockets
-  const objetiveName = objetiveTile.tileData.name
+  const pivotType = pivotTile.tileData.type
+  const objetiveType = objetiveTile.tileData.type
 
-
-
-  switch (direction) {
-    case 'up':
-      return canConnectUp(pivotSockets, objetiveSockets, pivotName, objetiveName)
-    case 'down':
-      return canConnectDown(pivotSockets, objetiveSockets, objetiveName)
-    case 'left':
-      return canConnectLeft(pivotSockets, objetiveSockets, objetiveName)
-    case 'right':
-      return canConnectRight(pivotSockets, objetiveSockets, objetiveName)
-    default:
-      return false
+  const connectionMapping = {
+    up: 'down',
+    down: 'up',
+    left: 'right',
+    right: 'left'
   }
-}
 
-/**
- * 
- * @param {SocketData} pivotSockets 
- * @param {SocketData} objetiveSockets 
- * @param {string} pivotName
- * @param {string} objetiveName
- * @returns
- */
-const canConnectUp = (pivotSockets, objetiveSockets, pivotName, objetiveName) => {
+  if (pivotType === objetiveType) 
+    return pivotTile.tileData.selfConnected && (pivotSockets[direction] === objetiveSockets[connectionMapping[direction]])
   
-  console.log('Nombre del pivote: ', pivotName)
-  console.log('Nombre del objetivo: ', objetiveName)
 
-  return pivotSockets.up.some(pivotSocket => {
-    if (pivotSocket !== objetiveName) return false
-    return objetiveSockets.down.includes(pivotSocket)
-  })
-}
-
-const canConnectDown = (pivotSockets, objetiveSockets, pivotName, objetiveName) => {
-
-  return pivotSockets.down.some(pivotSocket => {
-    if (pivotSocket !== objetiveName) return false
-    return objetiveSockets.up.includes(pivotName)
-  })
-
-}
-
-const canConnectLeft = (pivotSockets, objetiveSockets, pivotName, objetiveName) => {
-  return pivotSockets.left.some(pivotSocket => {
-    if (pivotSocket !== objetiveName) return false
-    return objetiveSockets.right.includes(pivotName)
-  })
-}
-
-const canConnectRight = (pivotSockets, objetiveSockets, pivotName, objetiveName) => {
-  return pivotSockets.right.some(pivotSocket => {
-    if (pivotSocket !== objetiveName) return false
-    return objetiveSockets.left.includes(pivotName)
-  })
+  return pivotSockets[direction] === objetiveSockets[connectionMapping[direction]]
 }
 
 
@@ -623,7 +602,7 @@ function displayTileInfo(tile) {
   textSize(12);
   textAlign(LEFT, CENTER);
 
-  const content = `Base Name: ${tile.tileData.baseName} \nName: ${tile.tileData.name} `;
+  const content = `Base Name: ${tile.tileData.type} \nName: ${tile.tileData.name} `;
   text(content, mouseX + 15, mouseY - 25);
   pop();
 }
