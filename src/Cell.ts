@@ -21,7 +21,6 @@ export default class Cell {
         this.p5 = p5;
     }
 
-
     display() {
         const colorDataMatrices = this.state.map(tile => tile.tileData.colorData)
         if (colorDataMatrices.length > 1) {
@@ -57,4 +56,99 @@ export default class Cell {
         );
     }
 
+    static selectCell = (cells : Cell[]) : Cell=> {
+
+        const nonCollapsedCells = cells.filter(cell => !cell.collapsed)
+      
+        if (nonCollapsedCells.length === 0) {
+          return null
+        }
+      
+        let minEntropy = Number.MAX_VALUE
+        let selectedCell = null
+        const entropyMap = new Map()
+      
+      
+        nonCollapsedCells.forEach(cell => {
+          const entropy = cell.entropy()
+          entropyMap.set(cell, entropy)
+          if (entropy < minEntropy) {
+            minEntropy = entropy
+          }
+        })
+      
+        const minEntropyCells = cells.filter(cell => entropyMap.get(cell) === minEntropy)
+      
+        if (minEntropyCells.length > 1) {
+          selectedCell = cells[Math.floor(Math.random() * minEntropyCells.length)]
+        }
+        else {
+          selectedCell = minEntropyCells[0]
+        }
+      
+        return selectedCell
+    }
+
+    static getNeighborsOfCell = (cell : Cell, cells : Cell[]) : Map<string, Cell> => {
+
+        const neighbors = new Map()
+        const nonCollapsedCells = cells.filter(cell => !cell.collapsed)
+       
+        const top = nonCollapsedCells.find(c => c.col === cell.col && c.row === cell.row - 1)
+        const bottom = nonCollapsedCells.find(c => c.col === cell.col && c.row === cell.row + 1)
+        const left = nonCollapsedCells.find(c => c.col === cell.col - 1 && c.row === cell.row)
+        const right = nonCollapsedCells.find(c => c.col === cell.col + 1 && c.row === cell.row)
+      
+        if (top) {
+          neighbors.set('up', top)
+        }
+        if (bottom) {
+          neighbors.set('down', bottom)
+        }
+        if (left) {
+          neighbors.set('left', left)
+        }
+        if (right) {
+          neighbors.set('right', right)
+        }
+      
+        return neighbors
+      }
+
+    static updateNeighborStates = (cell : Cell, neighbors : Map<string, Cell>) => {
+
+        neighbors.forEach((neighbor, direction) => {
+      
+          const neighborState = neighbor.state
+      
+          let newNeighborState = neighborState.filter(tile => Tile.canConnect(cell.state[0], tile, direction))
+      
+          if (newNeighborState.length === 0) {
+            newNeighborState = [
+              new Tile(cell.state[0].tileData)
+            ]
+          }
+      
+          neighbor.updateState(newNeighborState)
+      
+        })
+      
+    }
+
+    getNeighbors = (cells : Cell[]) => {
+        return Cell.getNeighborsOfCell(this, cells)
+    }
+    /**
+     * Returns the updated neighbors
+     * 
+     */
+    updateNeighbors = (cells : Cell[]) : Cell[] => {
+        const neighbors = this.getNeighbors(cells)
+        Cell.updateNeighborStates(this, neighbors)
+
+        return Array.from(neighbors.values())
+    }
+
+
+    
 }
