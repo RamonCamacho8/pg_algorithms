@@ -18,14 +18,14 @@ const tiles = Tile.createTiles(tileDataSet.tiles);
 
 const displayTilesSketch = (p5: P5) => {
 
-    const CANVAS_WIDTH = 400;
-    const GRID_COLS = 4;
+    const CANVAS_WIDTH = 200;
+    const GRID_COLS = 2;
     const GRID_ROWS = Math.ceil(tiles.length / GRID_COLS);
     const SIZE = CANVAS_WIDTH / GRID_COLS;
     const CANVAS_HEIGHT = GRID_ROWS * SIZE;
 
     const createCells = () => {
-        const cells = []
+        const cells : Cell[] = []
         for (let i = 0; i < tiles.length; i++) {
             const col = i % GRID_COLS;
             const row = Math.floor(i / GRID_COLS);
@@ -42,7 +42,7 @@ const displayTilesSketch = (p5: P5) => {
     }
 
     const isMouseHovering = (cells: Cell[]) => {
-        let hoveredCell = null;
+        let hoveredCell : Cell | null = null;
         for (let cell of cells) {
             if (cell.contains(p5.mouseX, p5.mouseY) && cell.state) {
                 hoveredCell = cell;
@@ -67,14 +67,23 @@ const displayTilesSketch = (p5: P5) => {
         if (cell.state.length === 1) {
             const tile = cell.state[0];
 
-            const text1 = `State: ${tile.tileData.flipInfo.wasFlipped}`
-            p5.text(text1, p5.mouseX + 15, p5.mouseY - 25);
-            const text2 = `Down: ${tile.tileData.socketData.sockets.down}`
-            p5.text(text2, p5.mouseX + 15, p5.mouseY - 10);
-            const type = `Type: ${tile.tileData.type}`
-            p5.text(type, p5.mouseX + 15, p5.mouseY + 10);
-            const name = `Name: ${tile.tileData.name}`
-            p5.text(name, p5.mouseX + 15, p5.mouseY + 25);
+           
+            const down = `Down: ${tile.tileData.socketData.sockets.down}`
+            const up = `Up: ${tile.tileData.socketData.sockets.up}`
+            const left = `Left: ${tile.tileData.socketData.sockets.left}`
+            const right = `Right: ${tile.tileData.socketData.sockets.right}`
+            const content = `${down}\n${up}\n${left}\n${right}`
+            p5.text(content, p5.mouseX + 15, p5.mouseY);
+
+            const wasFlipped = tile.tileData.flipInfo.wasFlipped ? "Flipped" : "Not Flipped"
+            const wasRotated = tile.tileData.rotationInfo.wasRotated ? "Rotated" : "Not Rotated"
+
+            const flipContent = `Flip: ${wasFlipped}`
+            const rotationContent = `Rotation: ${wasRotated}`
+            p5.text(flipContent, p5.mouseX + 15, p5.mouseY + 50);
+            p5.text(rotationContent, p5.mouseX + 15, p5.mouseY + 70);
+
+
         }
         else {
             const content = `Posible states ${cell.state.length}`
@@ -90,7 +99,7 @@ const displayTilesSketch = (p5: P5) => {
     p5.setup = () => {
 
         const canvas = p5.createCanvas(CANVAS_WIDTH, CANVAS_HEIGHT);
-        canvas.parent("app");
+        canvas.parent("list");
         p5.frameRate(20);
         p5.background("black");
 
@@ -128,7 +137,7 @@ const boardSketch = (p5: P5) => {
     const BOARD_SIZE = GRID_SIZE * CELLS_SIZE;
 
     const createCells = () : Cell[] => {
-        const cells = []
+        const cells : Cell[] | null = []
         for (let i = 0; i < CELLS_SIZE * CELLS_SIZE; i++) {
             const col = i % CELLS_SIZE;
             const row = Math.floor(i / CELLS_SIZE);
@@ -142,22 +151,26 @@ const boardSketch = (p5: P5) => {
 
     p5.setup = () => {
         const canvas = p5.createCanvas(BOARD_SIZE, BOARD_SIZE);
-        canvas.parent("app");
+        canvas.parent("board");
         p5.frameRate(20);
         p5.background("black");
         cells.forEach(cell => cell.display())
-        displayGrid(CELLS_SIZE, CELLS_SIZE, GRID_SIZE, p5);
+        // displayGrid(CELLS_SIZE, CELLS_SIZE, GRID_SIZE, p5);
     }
 
     p5.draw = () => {
-        const selectedCell : Cell = Cell.selectCell(cells)
+
+        const selectedCell : Cell | null = Cell.selectCell(cells)
+        
         if (!selectedCell) {
             p5.noLoop()
             return
         }
 
+
         selectedCell.collapse()
         const neighbors = selectedCell.updateNeighbors(cells)
+        
 
         try {
             neighbors.forEach(neighbor => neighbor.display())

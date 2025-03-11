@@ -22,13 +22,17 @@ export default class Cell {
     }
 
     display() {
-        const colorDataMatrices = this.state.map(tile => tile.tileData.colorData)
+
+        const colorDataMatrices = this.state.map(tile => tile.tileData.colorData).filter(data => data !== undefined)
+
         if (colorDataMatrices.length > 1) {
             const averagedColorData = averageColorData(colorDataMatrices)
             drawColorData(averagedColorData, this.col, this.row, this.size, this.p5)
         } else {
             const tile = this.state[0]
-            drawColorData(tile.tileData.colorData, this.col, this.row, this.size, this.p5)
+            if (tile.tileData.colorData) {
+                drawColorData(tile.tileData.colorData, this.col, this.row, this.size, this.p5)
+            }
         }
     }
 
@@ -56,16 +60,15 @@ export default class Cell {
         );
     }
 
-    static selectCell = (cells : Cell[]) : Cell=> {
+    static selectCell = (cells : Cell[]) : Cell | null => {
 
         const nonCollapsedCells = cells.filter(cell => !cell.collapsed)
-      
         if (nonCollapsedCells.length === 0) {
           return null
         }
       
         let minEntropy = Number.MAX_VALUE
-        let selectedCell = null
+        let selectedCell : Cell | null = null
         const entropyMap = new Map()
       
       
@@ -80,7 +83,7 @@ export default class Cell {
         const minEntropyCells = cells.filter(cell => entropyMap.get(cell) === minEntropy)
       
         if (minEntropyCells.length > 1) {
-          selectedCell = cells[Math.floor(Math.random() * minEntropyCells.length)]
+          selectedCell = nonCollapsedCells[Math.floor(Math.random() * minEntropyCells.length)]
         }
         else {
           selectedCell = minEntropyCells[0]
@@ -121,7 +124,7 @@ export default class Cell {
       
           const neighborState = neighbor.state
       
-          let newNeighborState = neighborState.filter(tile => Tile.canConnect(cell.state[0], tile, direction))
+          let newNeighborState = neighborState.filter(tile => Tile.canConnectByBitmat(cell.state[0], tile, direction))
       
           if (newNeighborState.length === 0) {
             newNeighborState = [

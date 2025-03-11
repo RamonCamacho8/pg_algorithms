@@ -12,7 +12,20 @@ body {
 
 .container {
     display: flex;
-    flex-direction: column;
-    justify-content: center;
+    flex-direction: row;
+    justify-content: space-between;
     align-items: center;
+}
+
+#board {
+    flex: 2;
+}
+
+#list {
+    flex: 1;
+    
+}
+
+#menu {
+    flex: 1;
 }

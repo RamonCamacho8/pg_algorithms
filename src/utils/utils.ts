@@ -7,7 +7,7 @@ export const loadTileDataset = (name?: string): TileDataSet => {
 
 export const createColorData = (bitmap: number[][], palette: RGBcolor[]) => {
     
-    const colorData = []
+    const colorData : RGBcolor[][] = []
 
     bitmap.forEach((row, i) => {
         colorData[i] = []
@@ -87,9 +87,16 @@ const flipSocketData = (socketData: SocketData) => {
 }
 
 const flip = (tileData: TileData) => {
+
+    
     
     const bitmap = flipMatrix(tileData.bitmap)
     const socketData = flipSocketData(tileData.socketData)
+
+    if (!tileData.colorData) {
+        throw new Error("El colorData es inválido")
+    }
+
     const colorData = flipMatrix(tileData.colorData)
     
     return {
@@ -108,13 +115,34 @@ const flip = (tileData: TileData) => {
 }
 
 const rotateSocketData = (socketData: SocketData) => {
-    const sockets = socketData.sockets
-    const rotated = {
-        up: sockets.right,
-        right: sockets.down,
-        down: sockets.left,
-        left: sockets.up
+    
+    let rotated = {...socketData.sockets}
+
+    const rotationMapping = {
+        up: 'right',
+        right: 'down',
+        down: 'left',
+        left: 'up'
     }
+    const temp : SocketData['sockets'] = {
+        up: 0,
+        right: 0,
+        down: 0,
+        left: 0
+    }
+
+    for (const key in rotated) {
+        const newKey = rotationMapping[key];
+        temp[newKey] = rotated[key];
+    }
+
+    rotated = {
+        up: temp.up,
+        right: temp.right,
+        down: temp.down,
+        left: temp.left
+    }
+
     return {
         selfConnected: socketData.selfConnected,
         sockets: rotated
@@ -171,6 +199,9 @@ const rotate = (tileData: TileData) => {
     const {rotationAngles} = tileData.rotationInfo
 
     const bitmapsMap = applyMatrixRotations(tileData.bitmap, rotationAngles)
+    if (!tileData.colorData) {
+        throw new Error("colorData is undefined");
+    }
     const colorDataMap = applyMatrixRotations(tileData.colorData, rotationAngles)
     const socketDataMap = applySocketDataRotations(tileData.socketData, rotationAngles)
 
@@ -198,7 +229,7 @@ const rotate = (tileData: TileData) => {
 
 export const applyTransformations = (tileData: TileData) => {
     
-    const results = []
+    const results : TileData[] = []
 
     const original : TileData = {
         ...tileData,
