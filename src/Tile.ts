@@ -50,10 +50,7 @@ export default class Tile {
         for (let i = 0; i < tiles.length; i++) {
             
             
-            if (tiles[i].index === this.index) {
-                console.log("Skipping self")
-                continue;
-            };
+            if (tiles[i].index === this.index) continue;
 
             //console.log("Checking tile with index: ", tiles[i].index)
 
@@ -61,7 +58,6 @@ export default class Tile {
                 this.neighbors[Tile.UP].push(tiles[i]);
             }
             if(this.overlapping(tiles[i], Tile.RIGHT)) {
-                console.log("Overlapping with tile: ", tiles[i].index)
                 this.neighbors[Tile.RIGHT].push(tiles[i]);
             }
             if(this.overlapping(tiles[i], Tile.DOWN)) {
@@ -78,6 +74,8 @@ export default class Tile {
             tiles[i].createNeighbors(tiles);
         }
     }
+
+    
 
     overlapping = (other : Tile, direction : number) : Boolean => {
         

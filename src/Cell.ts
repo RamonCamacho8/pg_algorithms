@@ -8,7 +8,7 @@ export default class Cell {
     x: number;
     y: number;
     size: number;
-    state: number[];
+    options: number[];
     collapsed: boolean = false;
     checked : boolean = false;
 
@@ -17,7 +17,7 @@ export default class Cell {
         this.x = x;
         this.y = y;
         this.size = size;
-        this.state = tiles.map(tile => tile.index)
+        this.options = tiles.map(tile => tile.index)
 
     }
 
@@ -26,7 +26,7 @@ export default class Cell {
             p5.square(this.x * this.size, this.y * this.size, this.size)
         }
         else {
-            const collapsedTile = tiles[this.state[0]]
+            const collapsedTile = tiles[this.options[0]]
             renderImage(p5, collapsedTile.img, this.x * this.size, this.y * this.size, this.size)
         }
     }
@@ -40,16 +40,16 @@ export default class Cell {
     }
 
     entropy = (): number => {
-        return this.state.length
+        return this.options.length
     }
 
     updateSate = (newState: number[]) => {
-        this.state = newState
+        this.options = newState
     }
 
     collapse = () => {
-        const randomIndex = Math.floor(Math.random() * this.state.length)
-        const collapsedTile = this.state[randomIndex]
+        const randomIndex = Math.floor(Math.random() * this.options.length)
+        const collapsedTile = this.options[randomIndex]
         this.updateSate([collapsedTile])
         this.collapsed = true
     }
@@ -80,11 +80,29 @@ export default class Cell {
         neighbors.forEach((neighbor, direction) => {
             if (neighbor.collapsed) return
             //Create a new state based on the posible neighbors of the tile of this cell
-            const tile = tiles[this.state[0]]
+            const tile = tiles[this.options[0]]
             const validTiles = tile.neighbors[direction].filter(neighborTile => neighborTile !== tile)
             const newState = validTiles.map(tile => tile.index)
             neighbor.updateSate(newState)
         })
+
+    }
+
+    reduceEntropy = (cell : Cell, grid : Cell[][], tiles : Tile[]) : void => {
+
+        const neighbors = cell.getNeighbors(grid)
+
+        let validOptions : Tile[] = []
+
+        const righNeighbor = neighbors[Tile.RIGHT]
+        // Right
+        for (let option of cell.options) {
+            validOptions = validOptions.concat(tiles[option].neighbors[Tile.RIGHT])
+        }
+        righNeighbor.options = validOptions.map(tile => tile.index)
+
+
+        
         
     }
 

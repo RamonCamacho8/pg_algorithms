@@ -92,7 +92,7 @@ const displayNeighborsCanvas = (p5 : P5) => {
       const tile = filterTiles[0]
 
       tile.createNeighbors(tiles)
-      tile.displayNeighbors(p5, Tile.UP, CANVAS_SIZE)
+      tile.displayNeighbors(p5, Tile.DOWN, CANVAS_SIZE)
 
       console.log(tile)
   
@@ -105,7 +105,7 @@ const displayNeighborsCanvas = (p5 : P5) => {
 const cellsCanvas = (p5 : P5) => {
 
   const CANVAS_SIZE = 540;
-  const CELL_SIZE = 30;
+  const CELL_SIZE = 60;
   const GRID_SIZE = CANVAS_SIZE / CELL_SIZE;
   const grid : Cell[][] = [];
 
