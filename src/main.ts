@@ -4,7 +4,7 @@ import { renderImage, extractTiles, renderImages } from './utils/utils';
 import Tile from './Tile';
 import Cell from './Cell';
 
-const IMAGE_SOURCE = '/assets/test_2.png'
+const IMAGE_SOURCE = '/assets/test_3.png'
 
 
 const drawingCanvas = (p5 : P5) => {
@@ -104,9 +104,9 @@ const displayNeighborsCanvas = (p5 : P5) => {
 
 const wfcCanvas = (p5 : P5) => {
 
+  const GRID_SIZE = 18;
   const CANVAS_SIZE = 540;
-  const CELL_SIZE = 60;
-  const GRID_SIZE = CANVAS_SIZE / CELL_SIZE;
+  const CELL_SIZE = CANVAS_SIZE / GRID_SIZE;
   const grid : Cell[][] = [];
 
   let img : P5.Image;
@@ -137,24 +137,21 @@ const wfcCanvas = (p5 : P5) => {
     grid.forEach(row => row.forEach(cell => cell.display(p5, tiles)))
 
   }
-  console.log('grid', grid)
-  let pickedCell;
   
   p5.draw = () => {
 
-    pickedCell = Cell.pickCell(grid)
+    const pickedCell = Cell.pickCell(grid)
     if (!pickedCell) {p5.noLoop(); return}
     pickedCell.collapse()
+    
+    const updatedCells = Cell.reduceEntropy(pickedCell, grid, tiles, 2, p5)
+    
     pickedCell.display(p5, tiles)
 
-    let neighbors = pickedCell.getNeighbors(grid)
 
-    pickedCell.updateNeighbors(neighbors, tiles)
-    neighbors.forEach(neighbor => neighbor.display(p5, tiles))
 
 
     //p5.noLoop()
-    
   }
 
 }

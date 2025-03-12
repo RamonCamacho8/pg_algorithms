@@ -32,6 +32,39 @@ export const renderImage = (
     p5.pop();
 };
 
+
+export const renderCell = (p5: P5,
+  img: P5.Image,
+  posX: number,
+  posY: number,
+  canvas_size: number) => {
+
+    img.loadPixels();
+
+    
+
+    // Assuming is a square image, size in pixels.
+    const imgSize = img.width;
+
+    let i = Math.floor(imgSize / 2);
+    let j = Math.floor(imgSize / 2);
+
+    p5.push();
+    p5.stroke(0);
+    p5.noStroke();
+
+    
+    const index = (i + j * imgSize) * 4;
+    const r = img.pixels[index];
+    const g = img.pixels[index + 1];
+    const b = img.pixels[index + 2];
+    const a = img.pixels[index + 3];
+    p5.fill(r, g, b, a);
+    p5.square(posX, posY, canvas_size);
+    p5.pop()
+
+}
+
 export const getUniqueRGBValues = (img : P5.Image) : number[][] => {
     // Ensure pixel data is ready
     img.loadPixels();

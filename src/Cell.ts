@@ -1,6 +1,6 @@
 import Tile from "./Tile"
 import P5 from "p5";
-import { renderImage } from "./utils/utils";
+import { renderImage, renderCell } from "./utils/utils";
 
 export default class Cell {
 
@@ -23,11 +23,38 @@ export default class Cell {
 
     display = (p5: P5, tiles : Tile[]) => {
         if (!this.collapsed) {
+            // Display the number of options
+            p5.fill(255)
             p5.square(this.x * this.size, this.y * this.size, this.size)
+            p5.fill(0)
+            p5.textSize(20)
+            p5.text(this.options.length, this.x * this.size + this.size / 2 - 10, this.y * this.size + this.size / 2  + 5)
         }
         else {
             const collapsedTile = tiles[this.options[0]]
-            renderImage(p5, collapsedTile.img, this.x * this.size, this.y * this.size, this.size)
+            renderCell(p5, collapsedTile.img, this.x * this.size, this.y * this.size, this.size)
+        }
+    }
+
+    displaySelected = (p5: P5, tiles : Tile[]) => {
+        if (!this.collapsed) {
+            // Display the number of options
+            p5.fill(128,
+                0,
+                0
+            )
+            p5.square(this.x * this.size, this.y * this.size, this.size)
+            p5.fill(
+                255,
+                0,
+                0
+            )
+            p5.textSize(20)
+            p5.text(this.options.length, this.x * this.size + this.size / 2 - 10, this.y * this.size + this.size / 2  + 5)
+        }
+        else {
+            const collapsedTile = tiles[this.options[0]]
+            renderCell(p5, collapsedTile.img, this.x * this.size, this.y * this.size, this.size)
         }
     }
 
@@ -43,14 +70,14 @@ export default class Cell {
         return this.options.length
     }
 
-    updateSate = (newState: number[]) => {
+    updateState = (newState: number[]) => {
         this.options = newState
     }
 
     collapse = () => {
         const randomIndex = Math.floor(Math.random() * this.options.length)
         const collapsedTile = this.options[randomIndex]
-        this.updateSate([collapsedTile])
+        this.updateState([collapsedTile])
         this.collapsed = true
     }
 
@@ -82,24 +109,49 @@ export default class Cell {
             //Create a new state based on the posible neighbors of the tile of this cell
             const tile = tiles[this.options[0]]
             const validTiles = tile.neighborsIndices[direction].filter(neighborTile => neighborTile !== tile.index)
-            neighbor.updateSate(validTiles)
+            neighbor.updateState(validTiles)
         })
 
     }
 
-    reduceEntropy = (cell : Cell, grid : Cell[][], tiles : Tile[]) : void => {
+    static reduceEntropy = (cell : Cell, grid : Cell[][], tiles : Tile[], depth : number = 1, p5 : P5) : number[] => {
+        
+        const updatedNeigborsIndices : number[] = []
 
-        const neighbors = cell.getNeighbors(grid)
+        cell.getNeighbors(grid).forEach((neighbor, direction) => {
+            
+            neighbor.displaySelected(p5, tiles)
 
-        let validOptions : number[] = []
+            let validOptions : number[] = []
+            if (!neighbor) return
+            if (neighbor.collapsed) return
+            if (neighbor.checked) return
+            
+            for(let option of cell.options) {
+                const tile = Tile.getTileByItsIndex(tiles, option)
+                if (!tile) return
+                validOptions = validOptions.concat(tile.neighborsIndices[direction])
+            }
 
-        const righNeighbor = neighbors[Tile.RIGHT]
-        // Right
-        for (let option of cell.options) {
-            validOptions = validOptions.concat(tiles[option].neighborsIndices[Tile.RIGHT])
-        }
-        righNeighbor.options = validOptions
+            validOptions = neighbor.options.filter(option => validOptions.includes(option))
+            if (validOptions.length === 0) {console.log('No valid options for neighbor')}
+            neighbor.updateState(validOptions)
+            neighbor.checked = true
 
+            updatedNeigborsIndices.push(neighbor.index)
+
+            if (depth > 0) {
+                const updatedNeighbors = Cell.reduceEntropy(neighbor, grid, tiles, depth - 1, p5)
+                updatedNeigborsIndices.push(...updatedNeighbors)
+            }
+        })
+
+        updatedNeigborsIndices.forEach(index => { 
+            const cell = Cell.getCellByIndex(grid, index)
+            if (cell) cell.checked = false
+         })
+
+        return updatedNeigborsIndices
     }
 
 
@@ -117,6 +169,10 @@ export default class Cell {
         if (lowestEntropyCells.length === 1) return lowestEntropyCells[0]
 
         return lowestEntropyCells[Math.floor(Math.random() * lowestEntropyCells.length)]
+    }
+
+    static getCellByIndex = (grid: Cell[][], index: number) => {
+        return grid.flat().find(cell => cell.index === index)
     }
 
 }

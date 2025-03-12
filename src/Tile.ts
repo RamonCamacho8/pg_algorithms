@@ -181,6 +181,18 @@ export default class Tile {
 
     }
 
+    static getTileByItsIndex = (tiles : Tile[], index : number) : Tile | null => {
+        
+        for (let i = 0; i < tiles.length; i++) {
+            if(tiles[i].index === index) {
+                return tiles[i];
+            }
+        }
+
+        return null;
+        
+    }
+
     
 
 
