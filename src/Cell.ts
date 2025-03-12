@@ -78,27 +78,9 @@ export default class Cell {
             if (neighbor.collapsed) return
             //Create a new state based on the posible neighbors of the tile of this cell
             const tile = tiles[this.state[0]]
-            if (direction === Tile.LEFT) {
-                const validTiles = tile.neighbors[Tile.LEFT].filter(neighborTile => neighborTile !== tile)
-                const newState = validTiles.map(tile => tile.index)
-                neighbor.updateSate(newState)
-            }
-            if (direction === Tile.RIGHT) {
-                const validTiles = tile.neighbors[Tile.RIGHT].filter(neighborTile => neighborTile !== tile)
-                const newState = validTiles.map(tile => tile.index)
-                neighbor.updateSate(newState)
-            }
-            if (direction === Tile.UP) {
-                const validTiles = tile.neighbors[Tile.UP].filter(neighborTile => neighborTile !== tile)
-                const newState = validTiles.map(tile => tile.index)
-
-                neighbor.updateSate(newState)
-            }
-            if (direction === Tile.DOWN) {
-                const validTiles = tile.neighbors[Tile.DOWN].filter(neighborTile => neighborTile !== tile)
-                const newState = validTiles.map(tile => tile.index)
-                neighbor.updateSate(newState)
-            }
+            const validTiles = tile.neighbors[direction].filter(neighborTile => neighborTile !== tile)
+            const newState = validTiles.map(tile => tile.index)
+            neighbor.updateSate(newState)
         })
     }
 

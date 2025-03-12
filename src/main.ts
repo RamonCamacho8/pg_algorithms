@@ -158,7 +158,7 @@ const cellsCanvas = (p5 : P5) => {
     neighbors.forEach(neighbor => neighbor.display(p5, tiles))
 
 
-    p5.noLoop()
+    //p5.noLoop()
     
   }
 
