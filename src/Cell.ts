@@ -54,26 +54,29 @@ export default class Cell {
         this.collapsed = true
     }
 
-    getNeighbors = (grid: Cell[][]): Map<number, Cell> => {
+    getNeighbors = (grid: Cell[][]): Cell[] => {
         
-        const neighbors = new Map<number, Cell>()
+        //const neighbors = new Map<number, Cell>()
+        const neighbors : Cell [] = []
 
         if (this.x > 0) {
-            neighbors.set(Tile.LEFT, grid[this.y][this.x - 1])
+            neighbors[Tile.LEFT] = grid[this.y][this.x - 1]
         }
         if (this.x < grid[0].length - 1) {
-            neighbors.set(Tile.RIGHT, grid[this.y][this.x + 1])
+            neighbors[Tile.RIGHT] = grid[this.y][this.x + 1]
         }
         if (this.y > 0) {
-            neighbors.set(Tile.UP, grid[this.y - 1][this.x])
+            neighbors[Tile.UP] = grid[this.y - 1][this.x]
         }
         if (this.y < grid.length - 1) {
-            neighbors.set(Tile.DOWN, grid[this.y + 1][this.x])
+            neighbors[Tile.DOWN] = grid[this.y + 1][this.x]
         }
+
         return neighbors
     }
 
-    updateNeighbors = (neighbors: Map<number, Cell>, tiles : Tile[]) => {
+    updateNeighbors = (neighbors: Cell[], tiles : Tile[]) => {
+        
         neighbors.forEach((neighbor, direction) => {
             if (neighbor.collapsed) return
             //Create a new state based on the posible neighbors of the tile of this cell
@@ -82,6 +85,7 @@ export default class Cell {
             const newState = validTiles.map(tile => tile.index)
             neighbor.updateSate(newState)
         })
+        
     }
 
 
