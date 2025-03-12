@@ -6,7 +6,7 @@ export default class Tile {
 
     img: p5.Image;
     index: number;
-    neighbors: Tile[][];
+    neighborsIndices: number[][];
 
     static UP = 0;
     static RIGHT = 1;
@@ -17,14 +17,14 @@ export default class Tile {
         
         this.img = img;
         this.index = index;
-        this.neighbors = [];
-        this.neighbors[Tile.UP] = [];
-        this.neighbors[Tile.RIGHT] = [];
-        this.neighbors[Tile.DOWN] = [];
-        this.neighbors[Tile.LEFT] = [];
+        this.neighborsIndices = [];
+        this.neighborsIndices[Tile.UP] = [];
+        this.neighborsIndices[Tile.RIGHT] = [];
+        this.neighborsIndices[Tile.DOWN] = [];
+        this.neighborsIndices[Tile.LEFT] = [];
     }
 
-    displayNeighbors = (p5 : p5, direction : number, canvas_size : number) : void => {
+    displayNeighbors = (p5 : p5, direction : number, canvas_size : number, tilesReference : Tile[]) : void => {
         //Display self in the first column and row and display neighbors in the second column and the corresponding row from 0 to the number of neighbors in that direction
         
         p5.push();
@@ -36,12 +36,12 @@ export default class Tile {
         renderImage(p5, this.img, 0, 0, localSize);
 
         p5.pop();
-        console.log(this.neighbors[direction].length)
-        this.neighbors[direction].forEach((neighbor, index) => {
+        console.log(this.neighborsIndices[direction].length)
+        this.neighborsIndices[direction].forEach((neighbor, index) => {
             p5.push();
             p5.noFill();
             p5.stroke('red');
-            renderImage(p5, neighbor.img, localSize, index * localSize, localSize);
+            renderImage(p5, tilesReference[neighbor].img, localSize, index * localSize, localSize);
             p5.pop();
         })
     }
@@ -55,16 +55,16 @@ export default class Tile {
             //console.log("Checking tile with index: ", tiles[i].index)
 
             if(this.overlapping(tiles[i], Tile.UP)) {
-                this.neighbors[Tile.UP].push(tiles[i]);
+                this.neighborsIndices[Tile.UP].push(tiles[i].index);
             }
             if(this.overlapping(tiles[i], Tile.RIGHT)) {
-                this.neighbors[Tile.RIGHT].push(tiles[i]);
+                this.neighborsIndices[Tile.RIGHT].push(tiles[i].index);
             }
             if(this.overlapping(tiles[i], Tile.DOWN)) {
-                this.neighbors[Tile.DOWN].push(tiles[i]);
+                this.neighborsIndices[Tile.DOWN].push(tiles[i].index);
             }
             if(this.overlapping(tiles[i], Tile.LEFT)) {
-                this.neighbors[Tile.LEFT].push(tiles[i]);
+                this.neighborsIndices[Tile.LEFT].push(tiles[i].index);
             }
         }
     }

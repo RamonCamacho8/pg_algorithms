@@ -81,9 +81,8 @@ export default class Cell {
             if (neighbor.collapsed) return
             //Create a new state based on the posible neighbors of the tile of this cell
             const tile = tiles[this.options[0]]
-            const validTiles = tile.neighbors[direction].filter(neighborTile => neighborTile !== tile)
-            const newState = validTiles.map(tile => tile.index)
-            neighbor.updateSate(newState)
+            const validTiles = tile.neighborsIndices[direction].filter(neighborTile => neighborTile !== tile.index)
+            neighbor.updateSate(validTiles)
         })
 
     }
@@ -92,18 +91,15 @@ export default class Cell {
 
         const neighbors = cell.getNeighbors(grid)
 
-        let validOptions : Tile[] = []
+        let validOptions : number[] = []
 
         const righNeighbor = neighbors[Tile.RIGHT]
         // Right
         for (let option of cell.options) {
-            validOptions = validOptions.concat(tiles[option].neighbors[Tile.RIGHT])
+            validOptions = validOptions.concat(tiles[option].neighborsIndices[Tile.RIGHT])
         }
-        righNeighbor.options = validOptions.map(tile => tile.index)
+        righNeighbor.options = validOptions
 
-
-        
-        
     }
 
 

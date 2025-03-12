@@ -1,16 +1,19 @@
 import './style.css'
 import P5 from 'p5'
-import { renderImage, extractTiles, renderImages, getUniqueRGBValues, normalizeImageColor } from './utils/utils';
+import { renderImage, extractTiles, renderImages } from './utils/utils';
 import Tile from './Tile';
 import Cell from './Cell';
 
+const IMAGE_SOURCE = '/assets/test_2.png'
+
 
 const drawingCanvas = (p5 : P5) => {
-    let img: P5.Image;
+    
+  let img: P5.Image;
     const CANVAS_SIZE  = 270;
 
     p5.preload = () => {
-      img = p5.loadImage('/assets/test_1.png');
+      img = p5.loadImage(IMAGE_SOURCE);
     }
 
     p5.setup = () => {
@@ -34,7 +37,7 @@ const displayTilesCanvas = (p5 : P5) => {
   let tiles : Tile[];
 
   p5.preload = () => {
-    img = p5.loadImage('/assets/test_1.png');
+    img = p5.loadImage(IMAGE_SOURCE);
   }
 
   p5.setup = () => {
@@ -57,7 +60,6 @@ const displayTilesCanvas = (p5 : P5) => {
     p5.pop()
 
   }
-
   
   p5.draw = () => {}
 
@@ -72,7 +74,7 @@ const displayNeighborsCanvas = (p5 : P5) => {
     let tiles : Tile[];
   
     p5.preload = () => {
-      img = p5.loadImage('/assets/test_1.png');
+      img = p5.loadImage(IMAGE_SOURCE);
       
     }
   
@@ -80,9 +82,7 @@ const displayNeighborsCanvas = (p5 : P5) => {
   
       const canvas = p5.createCanvas(CANVAS_SIZE, CANVAS_SIZE)
       canvas.parent('neighbors-canvas')
-      p5.background(0)
-      normalizeImageColor(img)
-      
+      p5.background(0)      
 
       tiles = extractTiles(p5, img, 3)
       
@@ -92,7 +92,7 @@ const displayNeighborsCanvas = (p5 : P5) => {
       const tile = filterTiles[0]
 
       tile.createNeighbors(tiles)
-      tile.displayNeighbors(p5, Tile.DOWN, CANVAS_SIZE)
+      tile.displayNeighbors(p5, Tile.DOWN, CANVAS_SIZE, tiles)
 
       console.log(tile)
   
@@ -102,7 +102,7 @@ const displayNeighborsCanvas = (p5 : P5) => {
 }
 
 
-const cellsCanvas = (p5 : P5) => {
+const wfcCanvas = (p5 : P5) => {
 
   const CANVAS_SIZE = 540;
   const CELL_SIZE = 60;
@@ -113,7 +113,7 @@ const cellsCanvas = (p5 : P5) => {
   let tiles : Tile[];
 
   p5.preload = () => {
-    img = p5.loadImage('/assets/test_1.png');
+    img = p5.loadImage(IMAGE_SOURCE);
   }
 
   p5.setup = () => {
@@ -121,15 +121,10 @@ const cellsCanvas = (p5 : P5) => {
     canvas.parent('cells-canvas')
     p5.background(0)
     p5.frameRate(30)
-    normalizeImageColor(img)
+    
 
     tiles = extractTiles(p5, img, 3)
     Tile.calculateNeighbors(tiles)
-
-    //console.log('tiles', tiles)
-    tiles.forEach(tile => {
-      const neighbors = tile.neighbors.slice(0)
-    })
 
     for (let y = 0; y < GRID_SIZE; y++) {
       grid[y] = []
@@ -165,10 +160,10 @@ const cellsCanvas = (p5 : P5) => {
 }
 
 
-//new P5(drawingCanvas)
-//new P5(displayTilesCanvas)
+new P5(drawingCanvas)
+new P5(displayTilesCanvas)
 new P5(displayNeighborsCanvas)
-new P5(cellsCanvas)
+new P5(wfcCanvas)
 
 
 

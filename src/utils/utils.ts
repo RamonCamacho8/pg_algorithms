@@ -131,6 +131,7 @@ const kMeans = (colors : number[][], k : number, maxIter = 2) => {
 export const normalizeImageColor = (img : P5.Image, k = 3) => {
   // Obtiene todos los colores únicos.
   const unique = getUniqueRGBValues(img);
+  console.log("Valores únicos antes de Normalización: ", unique);
 
   // Si la imagen tiene menos colores únicos que k, no hace nada.
   if (unique.length <= k) {
@@ -172,6 +173,7 @@ export const normalizeImageColor = (img : P5.Image, k = 3) => {
     }
   }
   img.updatePixels();
+  console.log("Valores únicos después de Normalización: ", getUniqueRGBValues(img));
 };
 
 
