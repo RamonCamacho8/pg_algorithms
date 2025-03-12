@@ -167,6 +167,8 @@ export const normalizeImageColor = (img : P5.Image, k = 3) => {
       pixels[index] = chosenColor[0];
       pixels[index + 1] = chosenColor[1];
       pixels[index + 2] = chosenColor[2];
+
+      //Usar image.set(x, y, color) para cambiar el color de un pixel y probar si funciona mejor.
     }
   }
   img.updatePixels();
