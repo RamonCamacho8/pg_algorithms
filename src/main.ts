@@ -120,7 +120,7 @@ const wfcCanvas = (p5 : P5) => {
     const canvas = p5.createCanvas(CANVAS_SIZE, CANVAS_SIZE)
     canvas.parent('cells-canvas')
     p5.background(0)
-    p5.frameRate(30)
+    p5.frameRate(60)
     
 
     tiles = extractTiles(p5, img, 3)

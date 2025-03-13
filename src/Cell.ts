@@ -21,6 +21,44 @@ export default class Cell {
 
     }
 
+    displayError = (p5: P5, tiles : Tile[]) => {
+        if (!this.collapsed) {
+            // Display the number of options
+            p5.fill(
+                255,
+                0,
+                0
+            )
+            p5.square(this.x * this.size, this.y * this.size, this.size)
+            p5.fill(0)
+            p5.textSize(20)
+            p5.text(this.options.length, this.x * this.size + this.size / 2 - 10, this.y * this.size + this.size / 2  + 5)
+        }
+        else {
+            const collapsedTile = tiles[this.options[0]]
+            renderCell(p5, collapsedTile.img, this.x * this.size, this.y * this.size, this.size)
+        }
+    }
+
+    displayActual = (p5: P5, tiles : Tile[]) => {
+        if (!this.collapsed) {
+            // Display the number of options
+            p5.fill(
+                128,
+                128,
+                0
+            )
+            p5.square(this.x * this.size, this.y * this.size, this.size)
+            p5.fill(0)
+            p5.textSize(20)
+            p5.text(this.options.length, this.x * this.size + this.size / 2 - 10, this.y * this.size + this.size / 2  + 5)
+        }
+        else {
+            const collapsedTile = tiles[this.options[0]]
+            renderCell(p5, collapsedTile.img, this.x * this.size, this.y * this.size, this.size)
+        }
+    }
+
     display = (p5: P5, tiles : Tile[]) => {
         if (!this.collapsed) {
             // Display the number of options
@@ -117,6 +155,7 @@ export default class Cell {
     static reduceEntropy = (cell : Cell, grid : Cell[][], tiles : Tile[], depth : number = 1, p5 : P5) : number[] => {
         
         const updatedNeigborsIndices : number[] = []
+        cell.displayActual(p5, tiles)
 
         cell.getNeighbors(grid).forEach((neighbor, direction) => {
             
@@ -127,15 +166,34 @@ export default class Cell {
             if (neighbor.collapsed) return
             if (neighbor.checked) return
             
+            if (cell.options.length === 0) {
+                console.log(cell)
+                console.log('No valid options for cell')
+                cell.displayError(p5, tiles)
+                throw new Error('No valid options for cell ')
+            }
+
             for(let option of cell.options) {
                 const tile = Tile.getTileByItsIndex(tiles, option)
                 if (!tile) return
-                validOptions = validOptions.concat(tile.neighborsIndices[direction])
+                validOptions = validOptions.concat(...tile.neighborsIndices[direction])
+                if (validOptions.length === 0) {
+                    console.log(cell)
+                    console.log('No valid options for neighbor')
+                    cell.displayError(p5, tiles)
+                    throw new Error('No valid options for neighbor')
+                }
             }
 
-            validOptions = neighbor.options.filter(option => validOptions.includes(option))
-            if (validOptions.length === 0) {console.log('No valid options for neighbor')}
-            neighbor.updateState(validOptions)
+            const newValidOptions = neighbor.options.filter(option => validOptions.includes(option))
+            if (newValidOptions.length === 0) {
+                console.log(neighbor.options, validOptions)
+                console.log(cell)
+                console.log('No valid options for neighbor')
+                cell.displayError(p5, tiles)
+                throw new Error('No valid options for neighbor')
+            }
+            neighbor.updateState(newValidOptions)
             neighbor.checked = true
 
             updatedNeigborsIndices.push(neighbor.index)
@@ -145,12 +203,12 @@ export default class Cell {
                 updatedNeigborsIndices.push(...updatedNeighbors)
             }
         })
-
+        console.log(updatedNeigborsIndices)
         updatedNeigborsIndices.forEach(index => { 
             const cell = Cell.getCellByIndex(grid, index)
             if (cell) cell.checked = false
          })
-
+        cell.display(p5, tiles)
         return updatedNeigborsIndices
     }
 
