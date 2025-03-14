@@ -8,14 +8,13 @@ export const renderImage = (
     posY: number,
     canvas_size: number
 ) => {
-    img.loadPixels();
 
     // Assuming is a square image, size in pixels.
     const imgSize = img.width;
     const squareSize = canvas_size / imgSize;
 
     p5.push();
-    p5.stroke(0);
+    p5.noStroke();
 
     for (let y = 0; y < imgSize; y++) {
         for (let x = 0; x < imgSize; x++) {
@@ -34,14 +33,10 @@ export const renderImage = (
 
 
 export const renderCell = (p5: P5,
-  img: P5.Image,
-  posX: number,
-  posY: number,
-  canvas_size: number) => {
-
-    img.loadPixels();
-
-    
+    img: P5.Image,
+    posX: number,
+    posY: number,
+    canvas_size: number) => {
 
     // Assuming is a square image, size in pixels.
     const imgSize = img.width;
@@ -53,7 +48,7 @@ export const renderCell = (p5: P5,
     p5.stroke(0);
     p5.noStroke();
 
-    
+
     const index = (i + j * imgSize) * 4;
     const r = img.pixels[index];
     const g = img.pixels[index + 1];
@@ -65,156 +60,10 @@ export const renderCell = (p5: P5,
 
 }
 
-export const getUniqueRGBValues = (img : P5.Image) : number[][] => {
-    // Ensure pixel data is ready
-    img.loadPixels();
-  
-    const { width, height, pixels } = img;
-    const uniqueColors = new Set<String>();
-  
-    for (let y = 0; y < height; y++) {
-      for (let x = 0; x < width; x++) {
-        // Calculate index in the pixel array
-        const index = 4 * (y * width + x);
-        const r = pixels[index];
-        const g = pixels[index + 1];
-        const b = pixels[index + 2];
-        
-        // Add "r,g,b" to the Set to keep only unique triplets
-        uniqueColors.add(`${r},${g},${b}`);
-      }
-    }
-  
-    // Convert each "r,g,b" string back to an array [r, g, b]
-    return Array.from(uniqueColors).map((colorString) => {
-      return colorString.split(',').map(Number);
-    });
-};
 
-const colorDistance = (c1 : number[], c2 : number[]) => {
-    const dr = c1[0] - c2[0];
-    const dg = c1[1] - c2[1];
-    const db = c1[2] - c2[2];
-    return Math.sqrt(dr * dr + dg * dg + db * db);
-};
+export const renderImages = (p5: P5, tiles: P5.Image[], canvas_size: number, originalImageSize: number = 9) => {
 
-// Algoritmo de k-means muy básico para agrupar los colores.
-const kMeans = (colors : number[][], k : number, maxIter = 2) => {
-  if (colors.length < k) return colors;
-
-  // Inicializa los centroides con k colores aleatorios de la lista.
-  let shuffled = colors.slice();
-  for (let i = shuffled.length - 1; i > 0; i--) {
-    const j = Math.floor(Math.random() * (i + 1));
-    [shuffled[i], shuffled[j]] = [shuffled[j], shuffled[i]];
-  }
-  let centroids = shuffled.slice(0, k);
-
-  for (let iter = 0; iter < maxIter; iter++) {
-    // Creamos k grupos vacíos.
-    const clusters: number[][][] = new Array(k).fill(0).map((): number[][] => []);
-
-    // Asignamos cada color al centroide más cercano.
-    colors.forEach((color) => {
-      let minDist = Infinity;
-      let index = 0;
-      centroids.forEach((centroid, i) => {
-        const d = colorDistance(color, centroid);
-        if (d < minDist) {
-          minDist = d;
-          index = i;
-        }
-      });
-      clusters[index].push(color);
-    });
-
-    // Calculamos el promedio de cada clúster para obtener nuevos centroides.
-    const newCentroids = clusters.map((cluster, i) => {
-      if (cluster.length === 0) return centroids[i];
-      let sumR = 0,
-        sumG = 0,
-        sumB = 0;
-      cluster.forEach((color) => {
-        sumR += color[0];
-        sumG += color[1];
-        sumB += color[2];
-      });
-      return [
-        Math.round(sumR / cluster.length),
-        Math.round(sumG / cluster.length),
-        Math.round(sumB / cluster.length),
-      ];
-    });
-
-    // Si los centroides no cambian, terminamos.
-    let converged = true;
-    for (let i = 0; i < k; i++) {
-      if (colorDistance(centroids[i], newCentroids[i]) > 0) {
-        converged = false;
-        break;
-      }
-    }
-    centroids = newCentroids;
-    if (converged) break;
-  }
-  return centroids;
-};
-
-// Función principal: normaliza los colores de la imagen a k colores.
-export const normalizeImageColor = (img : P5.Image, k = 3) => {
-  // Obtiene todos los colores únicos.
-  const unique = getUniqueRGBValues(img);
-  console.log("Valores únicos antes de Normalización: ", unique);
-
-  // Si la imagen tiene menos colores únicos que k, no hace nada.
-  if (unique.length <= k) {
-    console.warn("La imagen tiene menos colores únicos que el valor de k.");
-    return;
-  }
-
-  // Agrupa los colores en k clústeres y obtiene los centroides.
-  const centroids = kMeans(unique, k, 2);
-
-  // Carga los píxeles de la imagen.
-  img.loadPixels();
-  const { width, height, pixels } = img;
-
-  // Recorre cada píxel y asigna el color del centroide más cercano.
-  for (let y = 0; y < height; y++) {
-    for (let x = 0; x < width; x++) {
-      const index = 4 * (y * width + x);
-      const r = pixels[index];
-      const g = pixels[index + 1];
-      const b = pixels[index + 2];
-
-      let minDist = Infinity;
-      let chosenColor = centroids[0];
-      //console.log(centroids)
-      centroids.forEach((centroid) => {
-        const d = colorDistance([r, g, b], centroid);
-        if (d < minDist) {
-          minDist = d;
-          chosenColor = centroid;
-        }
-      });
-
-      pixels[index] = chosenColor[0];
-      pixels[index + 1] = chosenColor[1];
-      pixels[index + 2] = chosenColor[2];
-
-      //Usar image.set(x, y, color) para cambiar el color de un pixel y probar si funciona mejor.
-    }
-  }
-  img.updatePixels();
-  console.log("Valores únicos después de Normalización: ", getUniqueRGBValues(img));
-};
-
-
-  
-
-export const renderImages = (p5: P5, tiles: P5.Image[], canvas_size: number) => {
-
-    const imgSize = 9;
+    const imgSize = originalImageSize;
     const squareSize = canvas_size / imgSize;
     const tilesNumber = tiles.length;
 
@@ -240,7 +89,6 @@ export const extractTiles = (
     tileSize: number
 ) => {
 
-    sourceImage.loadPixels();
     const imgSize = sourceImage.width;
     let tiles: Tile[] = [];
 
@@ -280,6 +128,31 @@ export const extractTiles = (
     return tiles;
 };
 
+export const removeDuplicateTiles = (tiles: Tile[]): Tile[] => {
+    
+    const uniqueTiles: Tile[] = [];
+    const seenSignatures = new Set<string>();
+
+    for (let tile of tiles) {
+        // Creamos una firma a partir del array de píxeles.
+        // Esto asume que "tile.img.pixels" es un array de números representando RGBA.
+        const signature = tile.img.pixels.join(',');
+
+        // Si no hemos encontrado ya esta firma, se agrega el tile.
+        if (!seenSignatures.has(signature)) {
+            seenSignatures.add(signature);
+            uniqueTiles.push(tile);
+        }
+    }
+
+    for (let i = 0; i < uniqueTiles.length; i++) {
+        uniqueTiles[i].index = i;
+    }
+
+    return uniqueTiles;
+};
+
+
 const getPixel = (img: P5.Image, x: number, y: number) => {
 
     const index = (x + y * img.width) * 4;
@@ -291,43 +164,68 @@ const getPixel = (img: P5.Image, x: number, y: number) => {
     };
 }
 
-export const averageImage = (images: P5.Image[], p5: P5): P5.Image => {
+/**
+ * Devuelve un color calculado a partir de un degradado basado en la entropía,
+ * mapeando la cantidad de opciones (hasta un máximo de 81) a un color entre dos tonos.
+ */
+export const getEntropyGradientColor = (p5: P5, options: number[], maxOptions: number = 81): P5.Color => {
+    // Se calcula un factor entre 0 y 1 basado en la cantidad de opciones.
+    const fraction = Math.min(options.length / maxOptions, 1);
+    // Definimos dos colores base: para baja entropía (menos opciones) y alta entropía (más opciones).
+    const lowEntropyColor = p5.color("darkgreen");    // Gris oscuro
+    const highEntropyColor = p5.color("yellow"); // Gris claro
+    // Se interpola entre ambos colores según el factor calculado.
+    return p5.lerpColor(lowEntropyColor, highEntropyColor, fraction);
+};
 
-    const imageSize = images[0].width;
-    const img = p5.createImage(imageSize, imageSize);
+/**
+ * Función auxiliar para obtener el color promedio de una imagen.
+ */
+const getAverageColor = (p5: P5, img: P5.Image): P5.Color => {
     img.loadPixels();
-
-
-
-    // Asegurarse de que cada imagen tenga cargados sus píxeles
-    images.forEach(image => image.loadPixels());
-
-    // Iterar sobre cada píxel (cada píxel consta de 4 valores: R, G, B y A)
+    let sumR = 0, sumG = 0, sumB = 0;
+    const numPixels = img.width * img.height;
     for (let i = 0; i < img.pixels.length; i += 4) {
-        let sumR = 0, sumG = 0, sumB = 0, sumA = 0;
+        sumR += img.pixels[i];
+        sumG += img.pixels[i + 1];
+        sumB += img.pixels[i + 2];
+    }
+    const avgR = sumR / numPixels;
+    const avgG = sumG / numPixels;
+    const avgB = sumB / numPixels;
+    return p5.color(avgR, avgG, avgB);
+};
 
-        // Sumar los valores de cada imagen para el píxel actual
-        for (let j = 0; j < images.length; j++) {
-            sumR += images[j].pixels[i];
-            sumG += images[j].pixels[i + 1];
-            sumB += images[j].pixels[i + 2];
-            sumA += images[j].pixels[i + 3];
+/**
+ * Devuelve un color calculado a través de la superposición (mezcla) de todas las opciones únicas.
+ * Se obtiene, para cada opción, el color promedio del tile correspondiente y se promedian los colores.
+ */
+export const getOverlayColor = (p5: P5, tiles: Tile[], options: number[]): P5.Color => {
+    // Se obtienen solo las opciones únicas para evitar repetir cálculos.
+    const uniqueOptions = Array.from(new Set(options));
+    let sumR = 0, sumG = 0, sumB = 0;
+    let count = 0;
+
+    uniqueOptions.forEach(option => {
+        const tile = Tile.getTileByItsIndex(tiles, option);
+        if (tile) {
+            const avgColor = getAverageColor(p5, tile.img);
+            sumR += p5.red(avgColor);
+            sumG += p5.green(avgColor);
+            sumB += p5.blue(avgColor);
+            count++;
         }
+    });
 
-        // Calcular el promedio de cada componente y asignarlo al píxel resultante
-        const numImages = images.length;
-        img.pixels[i] = sumR / numImages;
-        img.pixels[i + 1] = sumG / numImages;
-        img.pixels[i + 2] = sumB / numImages;
-        img.pixels[i + 3] = sumA / numImages;
+    if (count === 0) {
+        return p5.color(0);
     }
 
-    img.updatePixels();
-    return img;
+    // Se calcula el promedio final de cada componente.
+    const finalR = sumR / count;
+    const finalG = sumG / count;
+    const finalB = sumB / count;
 
-}
+    return p5.color(finalR, finalG, finalB);
+};
 
-
-export const createCellsGrid = () => {
-
-}

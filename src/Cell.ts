@@ -1,6 +1,6 @@
 import Tile from "./Tile"
 import P5 from "p5";
-import { renderImage, renderCell } from "./utils/utils";
+import { renderCell, getOverlayColor, getEntropyGradientColor } from "./utils/utils";
 
 export default class Cell {
 
@@ -10,7 +10,7 @@ export default class Cell {
     size: number;
     options: number[];
     collapsed: boolean = false;
-    checked : boolean = false;
+    current : boolean = false;
 
     constructor(x: number, y: number, size: number, tiles: Tile[], index : number) {
         this.index = index;
@@ -21,91 +21,60 @@ export default class Cell {
 
     }
 
-    displayError = (p5: P5, tiles : Tile[]) => {
-        if (!this.collapsed) {
-            // Display the number of options
-            p5.fill(
-                255,
-                0,
-                0
-            )
-            p5.square(this.x * this.size, this.y * this.size, this.size)
-            p5.fill(0)
-            p5.textSize(20)
-            p5.text(this.options.length, this.x * this.size + this.size / 2 - 10, this.y * this.size + this.size / 2  + 5)
-        }
-        else {
-            const collapsedTile = tiles[this.options[0]]
-            renderCell(p5, collapsedTile.img, this.x * this.size, this.y * this.size, this.size)
-        }
-    }
-
-    displayActual = (p5: P5, tiles : Tile[]) => {
-        if (!this.collapsed) {
-            // Display the number of options
-            p5.fill(
-                128,
-                128,
-                0
-            )
-            p5.square(this.x * this.size, this.y * this.size, this.size)
-            p5.fill(0)
-            p5.textSize(20)
-            p5.text(this.options.length, this.x * this.size + this.size / 2 - 10, this.y * this.size + this.size / 2  + 5)
-        }
-        else {
-            const collapsedTile = tiles[this.options[0]]
-            renderCell(p5, collapsedTile.img, this.x * this.size, this.y * this.size, this.size)
-        }
-    }
-
     display = (p5: P5, tiles : Tile[]) => {
-        if (!this.collapsed) {
-            // Display the number of options
-            p5.fill(255)
+
+        p5.noStroke()
+
+        if (this.options.length === 0) {
+            p5.push()
+            p5.fill('blue')
             p5.square(this.x * this.size, this.y * this.size, this.size)
-            p5.fill(0)
-            p5.textSize(20)
-            p5.text(this.options.length, this.x * this.size + this.size / 2 - 10, this.y * this.size + this.size / 2  + 5)
+            p5.pop()
+            return
+        }
+
+        if (!this.collapsed) {
+            
+            
+            //const cellColor = getEntropyGradientColor(p5, this.options);
+
+            const cellColor = getOverlayColor(p5, tiles, this.options);
+
+            p5.push();
+            p5.fill(cellColor);
+            p5.square(this.x * this.size, this.y * this.size, this.size);
+            p5.pop();
+
         }
         else {
-            const collapsedTile = tiles[this.options[0]]
+            const collapsedTile = Tile.getTileByItsIndex(tiles, this.options[0])
+            if (!collapsedTile) return
             renderCell(p5, collapsedTile.img, this.x * this.size, this.y * this.size, this.size)
         }
-    }
 
-    displaySelected = (p5: P5, tiles : Tile[]) => {
-        if (!this.collapsed) {
-            // Display the number of options
-            p5.fill(128,
-                0,
-                0
-            )
+        if (this.current) {
+            p5.push()
+            p5.stroke('red')
+            p5.strokeWeight(2)
+            p5.noFill()
             p5.square(this.x * this.size, this.y * this.size, this.size)
-            p5.fill(
-                255,
-                0,
-                0
-            )
-            p5.textSize(20)
-            p5.text(this.options.length, this.x * this.size + this.size / 2 - 10, this.y * this.size + this.size / 2  + 5)
+            p5.pop()
         }
-        else {
-            const collapsedTile = tiles[this.options[0]]
-            renderCell(p5, collapsedTile.img, this.x * this.size, this.y * this.size, this.size)
-        }
-    }
-
-    displayBorder = (p5: P5) => {
-        p5.push()
-        p5.noFill()
-        p5.stroke('blue')
-        p5.square(this.x, this.y, this.size)
-        p5.pop()
+      
     }
 
     entropy = (): number => {
-        return this.options.length
+        const counts: { [key: number]: number } = {};
+        for (const option of this.options) {
+            counts[option] = (counts[option] || 0) + 1;
+        }
+        const total = this.options.length;
+        let entropy = 0;
+        for (const key in counts) {
+            const p = counts[key] / total;
+            entropy -= p * Math.log2(p);
+        }
+        return entropy;
     }
 
     updateState = (newState: number[]) => {
@@ -113,15 +82,18 @@ export default class Cell {
     }
 
     collapse = () => {
+        if (this.options.length === 0) return false
+
         const randomIndex = Math.floor(Math.random() * this.options.length)
         const collapsedTile = this.options[randomIndex]
         this.updateState([collapsedTile])
         this.collapsed = true
+
+        return true
     }
 
     getNeighbors = (grid: Cell[][]): Cell[] => {
         
-        //const neighbors = new Map<number, Cell>()
         const neighbors : Cell [] = []
 
         if (this.x > 0) {
@@ -152,66 +124,68 @@ export default class Cell {
 
     }
 
-    static reduceEntropy = (cell : Cell, grid : Cell[][], tiles : Tile[], depth : number = 1, p5 : P5) : number[] => {
-        
-        const updatedNeigborsIndices : number[] = []
-        cell.displayActual(p5, tiles)
+    
 
-        cell.getNeighbors(grid).forEach((neighbor, direction) => {
-            
-            neighbor.displaySelected(p5, tiles)
+    static reduceEntropyIterative = (startCell: Cell, grid: Cell[][], tiles: Tile[]) : number[] => {
+        const updatedNeighborsIndices: number[] = [];
+        // Usamos una pila para la propagación iterativa (sugerencia 1)
+        const stack: Cell[] = [startCell];
+      
+        while (stack.length > 0) {
+          const cell = stack.pop();
+          if (!cell) continue;
+      
+          // Suponiendo que cell.getNeighbors devuelve un array de vecinos en el orden: [top, right, bottom, left]
+          const neighbors = cell.getNeighbors(grid);
+          
+      
+          for (let i = 0; i < neighbors.length; i++) {
+            const neighbor = neighbors[i];
+            if (!neighbor || neighbor.collapsed) continue;
+      
+            // Utilizamos un Set para acumular las opciones válidas sin duplicados (sugerencia 5)
+            const validOptionsSet = new Set<number>();
+            for (let currentOption of cell.options) {
+              const tile = Tile.getTileByItsIndex(tiles, currentOption);
+              
+              if (!tile) {
+                console.log("Tile not found")
+                continue;
+              };
 
-            let validOptions : number[] = []
-            if (!neighbor) return
-            if (neighbor.collapsed) return
-            if (neighbor.checked) return
-            
-            if (cell.options.length === 0) {
-                console.log(cell)
-                console.log('No valid options for cell')
-                cell.displayError(p5, tiles)
-                throw new Error('No valid options for cell ')
+              // Se agregan las opciones permitidas para el vecino en la dirección i
+              for (const allowedOption of tile.neighborsIndices[i]) {
+                validOptionsSet.add(allowedOption);
+              }
             }
 
-            for(let option of cell.options) {
-                const tile = Tile.getTileByItsIndex(tiles, option)
-                if (!tile) return
-                validOptions = validOptions.concat(...tile.neighborsIndices[direction])
-                if (validOptions.length === 0) {
-                    console.log(cell)
-                    console.log('No valid options for neighbor')
-                    cell.displayError(p5, tiles)
-                    throw new Error('No valid options for neighbor')
-                }
+            if (neighbor.options.length === 0) {
+                console.log("No options left for cell - NEIGHBOR", neighbor.index);
             }
-
-            const newValidOptions = neighbor.options.filter(option => validOptions.includes(option))
+      
+            // Se filtran las opciones actuales del vecino, conservando solo aquellas que están en el conjunto válido
+            const newValidOptions = neighbor.options.filter(option => validOptionsSet.has(option));
+            
             if (newValidOptions.length === 0) {
-                console.log(neighbor.options, validOptions)
-                console.log(cell)
-                console.log('No valid options for neighbor')
-                cell.displayError(p5, tiles)
-                throw new Error('No valid options for neighbor')
+                console.log("No options left for cell", neighbor.index);
             }
-            neighbor.updateState(newValidOptions)
-            neighbor.checked = true
 
-            updatedNeigborsIndices.push(neighbor.index)
-
-            if (depth > 0) {
-                const updatedNeighbors = Cell.reduceEntropy(neighbor, grid, tiles, depth - 1, p5)
-                updatedNeigborsIndices.push(...updatedNeighbors)
+            // Actualización condicional: solo se actualiza si se reduce el conjunto de opciones (sugerencia 3)
+            if (newValidOptions.length < neighbor.options.length) {
+              neighbor.updateState(newValidOptions);
+              updatedNeighborsIndices.push(neighbor.index);
+              // Se agrega el vecino a la pila para continuar propagando el efecto de la actualización.
+              // No se utiliza un flag permanente para evitar bloquear actualizaciones futuras (sugerencia 4)
+              stack.push(neighbor);
             }
-        })
-        console.log(updatedNeigborsIndices)
-        updatedNeigborsIndices.forEach(index => { 
-            const cell = Cell.getCellByIndex(grid, index)
-            if (cell) cell.checked = false
-         })
-        cell.display(p5, tiles)
-        return updatedNeigborsIndices
-    }
+          }
+        }
+      
+        return updatedNeighborsIndices;
+      }
+      
 
+   
 
     static pickCell = (grid: Cell[][]) => {
 

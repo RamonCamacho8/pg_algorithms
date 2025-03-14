@@ -1,10 +1,10 @@
 import './style.css'
 import P5 from 'p5'
-import { renderImage, extractTiles, renderImages } from './utils/utils';
+import { renderImage, extractTiles, renderImages, removeDuplicateTiles } from './utils/utils';
 import Tile from './Tile';
 import Cell from './Cell';
 
-const IMAGE_SOURCE = '/assets/test_3.png'
+const IMAGE_SOURCE = '/assets/test_2.png'
 
 
 const drawingCanvas = (p5 : P5) => {
@@ -21,6 +21,7 @@ const drawingCanvas = (p5 : P5) => {
         const canvas = p5.createCanvas(CANVAS_SIZE, CANVAS_SIZE)
         canvas.parent('drawing-canvas')
         p5.background(0)
+        img.loadPixels()
 
         renderImage(p5, img, 0, 0, CANVAS_SIZE)
     }
@@ -45,12 +46,14 @@ const displayTilesCanvas = (p5 : P5) => {
     const canvas = p5.createCanvas(CANVAS_SIZE, CANVAS_SIZE)
     canvas.parent('tiles-canvas')
     p5.background(0)
+    img.loadPixels()
     
     
 
-    tiles = extractTiles(p5, img, 3)
+    tiles = extractTiles(p5, img, 3)    
     Tile.calculateNeighbors(tiles)
-    renderImages(p5, tiles.map(tile => tile.img), CANVAS_SIZE)
+
+    renderImages(p5, tiles.map(tile => tile.img), CANVAS_SIZE, img.width)
 
     p5.push()
     p5.noFill()
@@ -82,7 +85,8 @@ const displayNeighborsCanvas = (p5 : P5) => {
   
       const canvas = p5.createCanvas(CANVAS_SIZE, CANVAS_SIZE)
       canvas.parent('neighbors-canvas')
-      p5.background(0)      
+      p5.background(0)
+      img.loadPixels()      
 
       tiles = extractTiles(p5, img, 3)
       
@@ -104,7 +108,7 @@ const displayNeighborsCanvas = (p5 : P5) => {
 
 const wfcCanvas = (p5 : P5) => {
 
-  const GRID_SIZE = 18;
+  const GRID_SIZE = 36;
   const CANVAS_SIZE = 540;
   const CELL_SIZE = CANVAS_SIZE / GRID_SIZE;
   const grid : Cell[][] = [];
@@ -120,10 +124,14 @@ const wfcCanvas = (p5 : P5) => {
     const canvas = p5.createCanvas(CANVAS_SIZE, CANVAS_SIZE)
     canvas.parent('cells-canvas')
     p5.background(0)
-    p5.frameRate(60)
+    img.loadPixels()
+    p5.frameRate(30)
     
 
     tiles = extractTiles(p5, img, 3)
+
+    //tiles = removeDuplicateTiles(tiles)
+    //console.log(tiles.length)
     Tile.calculateNeighbors(tiles)
 
     for (let y = 0; y < GRID_SIZE; y++) {
@@ -138,28 +146,44 @@ const wfcCanvas = (p5 : P5) => {
 
   }
   
+
   p5.draw = () => {
 
+    
     const pickedCell = Cell.pickCell(grid)
+    
     if (!pickedCell) {p5.noLoop(); return}
-    pickedCell.collapse()
-    
-    const updatedCells = Cell.reduceEntropy(pickedCell, grid, tiles, 2, p5)
-    
+    const collapsed = pickedCell.collapse()
     pickedCell.display(p5, tiles)
+    
 
+    if (!collapsed) {
+      console.log("No se pudo colapsar la celda")
+      console.log(pickedCell)
+      p5.noLoop()
+      return
+    }
 
+    
+    //const updated = Cell.reduceEntropy(pickedCell, grid, tiles, 1)
+    const updated = Cell.reduceEntropyIterative(pickedCell, grid, tiles)
 
+    updated.forEach(cellIndex => {
+      const cell = Cell.getCellByIndex(grid, cellIndex)
+      if (cell) {
+        cell.display(p5, tiles)
+      }
+    })
 
-    //p5.noLoop()
+    
   }
 
 }
 
 
 new P5(drawingCanvas)
-new P5(displayTilesCanvas)
-new P5(displayNeighborsCanvas)
+//new P5(displayTilesCanvas)
+//new P5(displayNeighborsCanvas)
 new P5(wfcCanvas)
 
 

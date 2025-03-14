@@ -13,9 +13,10 @@ export default class Tile {
     static DOWN = 2;
     static LEFT = 3;
 
-    constructor(img: p5.Image,index : number) {
+    constructor(img: p5.Image, index : number) {
         
         this.img = img;
+        this.img.loadPixels();
         this.index = index;
         this.neighborsIndices = [];
         this.neighborsIndices[Tile.UP] = [];
@@ -47,12 +48,11 @@ export default class Tile {
     }
 
     createNeighbors = (tiles : Tile[]) : void => {
+
         for (let i = 0; i < tiles.length; i++) {
             
             
             if (tiles[i].index === this.index) continue;
-
-            //console.log("Checking tile with index: ", tiles[i].index)
 
             if(this.overlapping(tiles[i], Tile.UP)) {
                 this.neighborsIndices[Tile.UP].push(tiles[i].index);
@@ -71,16 +71,14 @@ export default class Tile {
 
     static calculateNeighbors = (tiles : Tile[]) : void => {
         for (let i = 0; i < tiles.length; i++) {
+            
             tiles[i].createNeighbors(tiles);
         }
     }
 
-    
-
     overlapping = (other : Tile, direction : number) : Boolean => {
         
         const overlappingWeight = 2;
-        //console.log("Checking overlapping with tile: ", other.index, " in direction: ", direction)
         if(direction === Tile.RIGHT) {
             const size = this.img.width;
             const startIndex = size - overlappingWeight;
@@ -98,9 +96,7 @@ export default class Tile {
                     const otherB = other.img.pixels[otherIndex + 2];
 
                     if(r !== otherR || g !== otherG || b !== otherB) {
-                        /* console.log("Pixel mismatch:", x + y * size, x - startIndex + y * size)
-                        console.log(`r: ${r} g: ${g} b: ${b} otherR: ${otherR} otherG: ${otherG} otherB: ${otherB}`)
-                        console.log("Not overlapping") */
+    
                         return false;
                     }
                 }
